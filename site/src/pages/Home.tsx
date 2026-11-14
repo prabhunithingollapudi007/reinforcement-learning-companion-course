@@ -1,4 +1,4 @@
-import { COURSE_LINKS, PARTS } from '../course'
+import { COURSE_LINKS, PARTS, REPO_URL } from '../course'
 import { LESSONS } from '../lessons'
 
 export function Home({ completed }: { completed: number[] }) {
@@ -89,7 +89,8 @@ export function Home({ completed }: { completed: number[] }) {
           This is an unofficial, independent study aid. It is not affiliated with, endorsed by, or produced by
           Stanford University or the instructors of either course. The lecture slides belong to their authors and are
           linked, not copied; the lesson text, figures and code here are original, and any mistakes in them are this
-          site's own. Lesson text and figures are shared under CC BY 4.0 and the code under the MIT licence. Progress you
+          site's own. Lesson text and figures are shared under CC BY 4.0 and the code under the MIT licence; the source,
+          and everything needed to run the labs, is <a href={REPO_URL}>on GitHub</a>. Progress you
           mark here is saved in this browser only.
         </p>
 

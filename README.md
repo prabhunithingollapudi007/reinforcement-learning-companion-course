@@ -6,6 +6,9 @@ what lecture slides cannot: figures for every concept, interactive playgrounds
 where you change the numbers and watch what happens, quizzes, and Python labs you
 write and test inside the page.
 
+**Read it online: https://prabhunithingollapudi007.github.io/reinforcement-learning-companion-course/**
+(lessons, figures, playgrounds and quizzes; the labs need a local copy, see below).
+
 > **Unofficial.** This is an independent study aid. It is not affiliated with,
 > endorsed by, or produced by Stanford University or the instructors of either
 > course. The lecture slides belong to their authors; this project links to them

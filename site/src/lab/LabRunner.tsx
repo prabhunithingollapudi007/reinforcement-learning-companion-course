@@ -1,3 +1,4 @@
+import { REPO_URL } from '../course'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { labBridge } from 'virtual:lab-bridge'
 import { CodeEditor } from './CodeEditor'
@@ -153,6 +154,27 @@ export function LabRunner({ week }: { week: string }) {
 
   if (load.state === 'loading') return <div className="lab lab-empty">Loading the lab…</div>
 
+  if (load.state === 'unavailable' && load.reason === 'hosted') {
+    return (
+      <div className="lab lab-empty">
+        <strong>This lab runs on your own machine.</strong>
+        <p>
+          A hosted page cannot save files or run Python, so the editor and the Run tests button are not available
+          here. Everything else on this page works.
+        </p>
+        <p>
+          To do the lab, <a href={REPO_URL}>get the project from GitHub</a> and start the site with{' '}
+          <code>npm --prefix site run dev</code>: this panel then becomes an editor with a Run tests button. Or read
+          the task, starter code and tests in{' '}
+          <a href={`${REPO_URL}/tree/master/labs/${week}`}>
+            <code>labs/{week}</code>
+          </a>{' '}
+          and run <code>python -m pytest</code> in that folder.
+        </p>
+      </div>
+    )
+  }
+
   if (load.state === 'unavailable') {
     return (
       <div className="lab lab-empty">
@@ -161,7 +183,7 @@ export function LabRunner({ week }: { week: string }) {
           Start it with <code>npm --prefix site run dev</code>, or work in the folder <code>labs/{week}</code>{' '}
           directly and run <code>python -m pytest</code> there.
         </p>
-        {load.reason !== 'hosted' && <p className="dim small">Details: {load.reason}</p>}
+        <p className="dim small">Details: {load.reason}</p>
       </div>
     )
   }

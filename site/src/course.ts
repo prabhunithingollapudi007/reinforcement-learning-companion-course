@@ -41,6 +41,9 @@ const book = (label: string): Source => ({
   url: 'http://incompleteideas.net/book/RLbook2020.pdf',
 })
 
+/** Where this project lives. The hosted copy points readers here for the labs. */
+export const REPO_URL = 'https://github.com/prabhunithingollapudi007/reinforcement-learning-companion-course'
+
 export const COURSE_LINKS = [
   { label: 'CS 234 modules page (Winter 2026)', url: 'https://web.stanford.edu/class/cs234/modules.html' },
   { label: 'CS 224R course page (Spring 2026)', url: 'https://cs224r.stanford.edu/' },

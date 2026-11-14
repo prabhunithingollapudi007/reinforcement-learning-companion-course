@@ -18,7 +18,7 @@ export function BatchAB() {
       title="Same data, two answers"
       caption={
         <>
-          The example CS 234 takes from Sutton and Barto, with γ = 1. Replay this fixed dataset through each method
+          A classic example from Sutton and Barto's textbook, with γ = 1. Replay this fixed dataset through each method
           until nothing changes. They agree about B and disagree about A, because they are answering different
           questions.
         </>

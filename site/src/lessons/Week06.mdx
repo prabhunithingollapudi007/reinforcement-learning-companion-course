@@ -133,12 +133,13 @@ In practice the critic is learned alongside the policy and is never exact, which
 
 <PpoLoop />
 
-The lecture's summary of why it became the default:
+Why it became the default, following the lecture's summary:
 
 - It reuses each batch for several gradient steps, so it needs far fewer episodes than plain policy gradient.
 - The clip (or KL penalty) makes large, destructive policy changes unlikely.
 - It is simple to implement on top of any policy gradient code.
-- It carries no global guarantee: at best it settles at a local optimum, not necessarily the best policy.
+
+One caveat: it carries no global guarantee. At best it settles at a local optimum, not necessarily the best policy.
 
 ## What breaks next
 
