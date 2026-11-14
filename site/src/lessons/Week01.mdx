@@ -1,0 +1,262 @@
+import { BigPicture, Bridge, Derivation, PlainWords, Recap, Refresher, TryThis } from '../components/Blocks'
+import { Quiz } from '../components/Quiz'
+import {
+  AlgorithmMap,
+  BackupDiagram,
+  ContractionPicture,
+  CourseQuadrant,
+  InteractionLoop,
+  PolicyIterationFunnel,
+  RoverBackup,
+  ThreeLayers,
+} from '../figures/week01'
+import { LabRunner } from '../lab/LabRunner'
+import { ConvergenceChart } from '../playgrounds/ConvergenceChart'
+import { DiscountExplorer } from '../playgrounds/DiscountExplorer'
+import { GridworldPlanner } from '../playgrounds/GridworldPlanner'
+import { week01Quiz } from './week01.quiz'
+
+<BigPicture>
+
+CS 234 says RL involves four things at once: **optimization**, **delayed consequences**, **exploration** and **generalization**. This week switches the last two off: you are given the rules, and the world is small. What is left is the core problem, that an action now changes what is possible later.
+
+</BigPicture>
+
+<CourseQuadrant />
+
+<Refresher title="Markov chains, expectations and fixed points">
+
+A **Markov chain** is a random sequence of states where the next state depends only on the current one, described by a transition matrix $P$ whose rows sum to 1. **Linearity of expectation** lets an expected sum be split into a sum of expectations. A **fixed point** of $f$ is an $x$ with $f(x) = x$; if $f$ shrinks distances, applying it repeatedly from anywhere converges to the single fixed point.
+
+</Refresher>
+
+## The interaction loop
+
+<InteractionLoop />
+
+- A **state** $s$ is whatever determines what happens next. The **Markov assumption**: the future depends on the past only through the current state and action.
+- A **policy** $\pi(a \mid s)$ is the agent's behaviour: a distribution over actions in each state.
+- A **reward** $R(s, a)$ scores one step. The agent's job is to make the *sum* of rewards large.
+
+<PlainWords>
+
+"Markov" describes your model of the world, not the world. If the state leaves something out, such as velocity when you see one camera frame, the future will seem to depend on the past. Put the missing piece into the state and the property returns. CS 224R keeps this visible by writing an **observation** $o_t$ for what the agent actually sees.
+
+</PlainWords>
+
+## Returns and discounting
+
+The quantity to maximize is the **return**, the discounted sum of rewards from now on:
+
+$$
+G_t = r_t + \gamma r_{t+1} + \gamma^2 r_{t+2} + \cdots, \qquad 0 \le \gamma \le 1 .
+$$
+
+The **discount factor** $\gamma$ sets how far ahead the agent looks. The weights sum to $1/(1-\gamma)$, a rough planning horizon: 10 steps at $\gamma = 0.9$, 100 at $\gamma = 0.99$.
+
+<DiscountExplorer />
+
+<TryThis>
+
+1. Pull γ down until the preference flips. It happens at the break-even value shown, about 0.79.
+2. Set γ back to 0.9 and push the large reward out to 30 steps. The agent now takes +1 over +10, because you told it step 30 barely counts.
+
+</TryThis>
+
+## From chains to decisions
+
+<ThreeLayers />
+
+The **value** of a state is the expected return from starting there, $V(s) = \mathbb{E}[G_t \mid s_t = s]$. Split the return into its first reward and everything after, and you get the equation of the week. For a reward process:
+
+$$
+V(s) = \underbrace{R(s)}_{\text{now}} + \gamma \underbrace{\sum_{s'} P(s' \mid s)\, V(s')}_{\text{expected value of where I land}} .
+$$
+
+<PlainWords>
+
+The **Bellman equation**: the value of where I am equals what I get now, plus the discounted value of where I end up next, averaged over where that might be. Every algorithm in this course is a way of making that sentence true.
+
+</PlainWords>
+
+It is linear in $V$, so it can be solved directly as $V = (I - \gamma P)^{-1} R$ at a cost of about $|S|^3$, or by applying the right-hand side repeatedly from $V_0 = 0$ at about $|S|^2$ per pass.
+
+One fact makes the bottom row of the figure easy: **an MDP with a fixed policy is a reward process.** Average over the policy's action choices and the row above is all you need.
+
+## Evaluating a policy
+
+**Policy evaluation** asks how good a given policy is. One step of it is a **Bellman backup**: the value of a state, computed from the values of the states it leads to.
+
+<BackupDiagram />
+
+$$
+V^\pi_{k}(s) = \sum_a \pi(a \mid s) \Big[ R(s, a) + \gamma \sum_{s'} P(s' \mid s, a)\, V^\pi_{k-1}(s') \Big]
+$$
+
+<RoverBackup />
+
+Stopping halfway down the tree gives a second object: the value of taking one particular action first, then following the policy.
+
+$$
+Q^\pi(s, a) = R(s, a) + \gamma \sum_{s'} P(s' \mid s, a)\, V^\pi(s')
+$$
+
+$V$ scores states; $Q$ scores state-action pairs, which is what lets you compare actions.
+
+## Finding the best policy
+
+**Control** asks for the best policy. Three facts frame the search:
+
+- There are $|A|^{|S|}$ deterministic policies, so trying them all is out.
+- Some optimal policy is **deterministic and stationary** (the same at every time step).
+- The optimal value function is unique. The optimal policy need not be: two can tie.
+
+**Policy iteration** alternates two steps until the policy stops changing: **evaluate** (compute $V^{\pi}$), then **improve** (in every state, switch to $\arg\max_a Q^{\pi}(s, a)$).
+
+<PolicyIterationFunnel />
+
+The improve step is safe: acting greedily against the *old* policy's values gives a policy at least as good in every state. With finitely many policies and none repeating, the loop must end at an optimal one.
+
+<Derivation title="Why greedy improvement never makes things worse" why="the same argument, in approximate form, is the theory behind trust-region methods and PPO in Week 6. CS 234 notes that policy iteration is closely related to policy gradient.">
+
+Write $\pi' = \pi_{i+1}$ and $\pi = \pi_i$. By definition of the greedy step,
+
+$$
+V^{\pi}(s) \le \max_a Q^{\pi}(s, a) = R(s, \pi'(s)) + \gamma \sum_{s'} P(s' \mid s, \pi'(s))\, V^{\pi}(s') .
+$$
+
+This says: take the new action once, then go back to the old policy, and you do no worse. Now apply the same inequality to the $V^\pi(s')$ on the right:
+
+$$
+V^{\pi}(s) \le R(s, \pi'(s)) + \gamma \sum_{s'} P(s' \mid s, \pi'(s)) \Big[ R(s', \pi'(s')) + \gamma \sum_{s''} P(s'' \mid s', \pi'(s'))\, V^{\pi}(s'') \Big] .
+$$
+
+That is the new action twice, then the old policy. Repeating forever pushes the old policy infinitely far into the discounted future, leaving exactly the value of always following $\pi'$:
+
+$$
+V^{\pi}(s) \le V^{\pi'}(s) \quad \text{for every } s .
+$$
+
+If the greedy step changes nothing, then $V^\pi(s) = \max_a Q^\pi(s,a)$ in every state, which is the condition for being optimal.
+
+</Derivation>
+
+## Value iteration
+
+**Value iteration** skips the separate evaluation step. It applies the right-hand tree from the backup figure, the one with a max, to every state:
+
+$$
+V_{k+1}(s) = \max_a \Big[ R(s, a) + \gamma \sum_{s'} P(s' \mid s, a)\, V_k(s') \Big], \qquad \text{in short } V_{k+1} = B V_k .
+$$
+
+Starting from $V_0 = 0$, **$V_k(s)$ is the best expected return from $s$ with exactly $k$ decisions left.** Each sweep looks one step further.
+
+<GridworldPlanner />
+
+<TryThis>
+
+1. Press **Sweep once** a few times from zero. Value appears next to the goal and spreads one cell per sweep.
+2. Press **Run to convergence**, then drag **slip** to 0: the route hugs the pits, 7 moves. At 0.1 it switches to the 9-move route over the top. At 0.25 the agent at S stops walking: it pushes into the left wall and waits to be slipped upward.
+3. Put slip back at 0.2 and lower **reward per step**. Around −0.16 time costs more than risk and the short route returns. Around −0.28 the agent at S walks into the pit: ending the episode beats paying for the walk.
+4. Reset the step reward and raise γ to 0.99. S pushes into the wall again; a patient agent has no reason to gamble. Now try γ = 0.8. Same action, opposite reason: the distant goal is worth too little to risk anything for.
+
+</TryThis>
+
+None of those behaviours was programmed. **The reward, the discount and the dynamics are the specification**, and each behaviour is its exact optimum. When an RL agent does something odd, it is usually solving the stated problem correctly.
+
+## Why it converges
+
+<ContractionPicture />
+
+The backup $B$ is a **contraction**: it brings any two value functions closer by at least a factor of $\gamma$, measured by the largest gap over states.
+
+$$
+\lVert B V - B V' \rVert_\infty \le \gamma\, \lVert V - V' \rVert_\infty
+$$
+
+- $B$ has exactly one fixed point, $V^*$, and value iteration reaches it from **any** start.
+- The error shrinks geometrically: at most $\gamma^k$ times the starting error after $k$ sweeps.
+- A stopping rule: if a sweep changes no value by more than $\epsilon$, the values are within $\epsilon\gamma/(1-\gamma)$ of optimal.
+
+<Derivation title="The Bellman backup is a γ-contraction" why="this one inequality is the reason everything this week converges, and seeing where it relies on an exact maximum and exact expectation explains why adding function approximation in Week 4 can break convergence.">
+
+Fix a state $s$. The difference of two maxima is at most the maximum of the differences, so
+
+$$
+\big| (BV)(s) - (BV')(s) \big| \le \max_a \Big| \gamma \sum_{s'} P(s' \mid s, a) \big( V(s') - V'(s') \big) \Big| .
+$$
+
+The rewards cancelled because they do not depend on $V$. Each term $|V(s') - V'(s')|$ is at most the largest gap $\lVert V - V' \rVert_\infty$, and the probabilities sum to 1:
+
+$$
+\big| (BV)(s) - (BV')(s) \big| \le \gamma\, \lVert V - V' \rVert_\infty \max_a \sum_{s'} P(s' \mid s, a) = \gamma\, \lVert V - V' \rVert_\infty .
+$$
+
+This holds for every $s$, so it holds for the largest gap on the left. For the stopping rule, put $V' = V^*$ and use the triangle inequality: $\lVert V_{k+1} - V^* \rVert \le \gamma \lVert V_k - V^* \rVert \le \gamma \big( \lVert V_k - V_{k+1} \rVert + \lVert V_{k+1} - V^* \rVert \big)$, then solve for $\lVert V_{k+1} - V^* \rVert$.
+
+</Derivation>
+
+<ConvergenceChart />
+
+<TryThis>
+
+1. Look at the vertical marker. The greedy policy is already optimal after 16 sweeps, while the values need 43 to settle to six decimal places. If you only want the policy, most of the work is wasted.
+2. To the right of the marker the value-iteration line is straight: each sweep multiplies the error by about 0.74, well under the guaranteed 0.9. The guarantee is a worst case; this world does better because probability keeps draining into the end states, where the error is zero.
+3. Raise γ to 0.99. Value iteration now needs over a hundred sweeps; policy iteration still finishes in a handful of rounds, each costing a full policy evaluation.
+4. Set slip to 0. The world is deterministic and the error drops to exactly zero after a few sweeps.
+
+</TryThis>
+
+| | Value iteration | Policy iteration |
+|---|---|---|
+| Keeps | a value function | a policy and its value |
+| One iteration | one backup per state | a full policy evaluation, then a greedy step |
+| Iterations needed | many when $\gamma$ is near 1 | few |
+| Policy improves every iteration? | not guaranteed | yes |
+
+## The same objects in CS 224R
+
+<AlgorithmMap />
+
+<Bridge title="two ways of writing the goal">
+
+CS 224R states the goal for a whole episode at once: maximize $\mathbb{E}_{\tau \sim p_\theta(\tau)} \big[ \sum_t r(s_t, a_t) \big]$, where a trajectory $\tau = (s_1, a_1, \dots, s_T, a_T)$ has probability
+
+$$
+p_\theta(\tau) = p(s_1) \prod_{t=1}^{T} \pi_\theta(a_t \mid s_t)\, p(s_{t+1} \mid s_t, a_t) .
+$$
+
+Same problem, three changes of emphasis: the policy is a neural network with weights $\theta$, the sum starts out finite and undiscounted, and the dynamics $p$ are **unknown**. The $V^\pi(s)$ you computed this week is this expectation, conditioned on starting at $s$.
+
+</Bridge>
+
+## What breaks next
+
+Both algorithms have the sum $\sum_{s'} P(s' \mid s, a)(\cdots)$ at their centre and loop over every state. Look back at the map at the top of the page:
+
+- **Without the model** the sum cannot be computed, only sampled by acting. That is Weeks 2 and 3, starting with the simplest idea: run many episodes and average the returns.
+- **Without a table** the values need a function approximator, and the contraction argument stops being enough. That is Week 4.
+
+## Python lab
+
+Implement the week's algorithms on the same gridworld the playground uses. Your code is saved to the file shown, and **Run tests** runs it with your own Python. When the tests pass, your numbers match the cells above.
+
+<LabRunner week="week01" />
+
+## Quiz
+
+<Quiz questions={week01Quiz} />
+
+<Recap>
+
+- An **MDP** is $(S, A, P, R, \gamma)$. The state is Markov: it carries everything about the past that matters for the future.
+- The **return** is the discounted sum of rewards. $\gamma$ sets how far ahead the agent cares, roughly $1/(1-\gamma)$ steps.
+- A **value function** is expected return. $V^\pi$ scores states; $Q^\pi$ scores taking an action first.
+- The **Bellman equation**: value now = reward now + discounted expected value of the next state.
+- A fixed policy turns an MDP into a reward process, so **policy evaluation** is just repeated backups.
+- **Policy iteration**: evaluate, then act greedily. Every round is at least as good as the last, and it stops at an optimal policy.
+- **Value iteration**: back up with a max. $V_k$ is the best you can do with $k$ steps left.
+- Both converge because the backup is a **γ-contraction**: error shrinks by at least γ per sweep, from any starting point.
+- Both need the model and a table. Removing those two assumptions is the rest of the course.
+
+</Recap>

@@ -1,0 +1,14 @@
+{
+  "title": "Planning in a known MDP",
+  "edit": "lab.py",
+  "starter": "starter/lab.py",
+  "readonly": ["gridworld.py", "test_lab.py"],
+  "solution": "solution.py",
+  "steps": [
+    { "function": "q_from_v", "hint": "One line: R + gamma * P @ V." },
+    { "function": "policy_evaluation", "hint": "Repeat the backup for a fixed policy until the largest change is below tol." },
+    { "function": "policy_improvement", "hint": "argmax over actions of q_from_v." },
+    { "function": "policy_iteration", "hint": "Alternate the two above; stop when the policy is unchanged." },
+    { "function": "value_iteration", "hint": "The same loop as evaluation, with a max over actions." }
+  ]
+}

@@ -1,0 +1,7 @@
+node_modules/
+dist/
+__pycache__/
+.pytest_cache/
+.venv/
+# Course slides are for local reference only; do not publish them.
+materials/

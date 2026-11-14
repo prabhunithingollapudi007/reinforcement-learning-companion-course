@@ -1,0 +1,230 @@
+/* In-page lab: code editor and test results. */
+:root {
+  --code-bg: #f6f5f1;
+  --code-active: #ecebe6;
+  --code-selection: #cde2fb;
+  --code-keyword: #8a2be2;
+  --code-string: #0b6b2f;
+  --code-comment: #7a7872;
+  --code-number: #a34a00;
+  --code-function: #1c5cab;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme='light'])) {
+    --code-bg: #141413;
+    --code-active: #1f1f1e;
+    --code-selection: #16345a;
+    --code-keyword: #c49bff;
+    --code-string: #7fd39a;
+    --code-comment: #8a8880;
+    --code-number: #f0a56b;
+    --code-function: #86b6ef;
+  }
+}
+:root[data-theme='dark'] {
+  --code-bg: #141413;
+  --code-active: #1f1f1e;
+  --code-selection: #16345a;
+  --code-keyword: #c49bff;
+  --code-string: #7fd39a;
+  --code-comment: #8a8880;
+  --code-number: #f0a56b;
+  --code-function: #86b6ef;
+}
+
+.lab {
+  margin: 1.6em 0;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface-1);
+  box-shadow: var(--shadow);
+  font-family: var(--font-ui);
+  font-size: 0.95rem;
+  line-height: 1.45;
+  overflow: hidden;
+}
+/* Give code more room than prose on wide screens. */
+@media (min-width: 1280px) {
+  .lab {
+    margin-left: -70px;
+    margin-right: -70px;
+  }
+}
+.lab-empty {
+  padding: 18px 20px;
+}
+.lab-empty p {
+  margin: 8px 0 0;
+}
+.lab-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.lab-folder {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+.lab-steps {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 12px 20px 12px 44px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+.lab-steps li {
+  margin: 0;
+}
+.lab-steps code {
+  margin-right: 8px;
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  background: var(--surface-2);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+}
+.lab-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 8px 12px 0;
+  background: var(--surface-2);
+}
+.lab-tab {
+  padding: 7px 14px;
+  border: 0;
+  border-radius: 8px 8px 0 0;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+.lab-tab:hover {
+  color: var(--text-primary);
+}
+.lab-tab.is-active {
+  background: var(--code-bg);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+.lab-tab-note {
+  margin-left: 8px;
+  font-family: var(--font-ui);
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.code-editor {
+  background: var(--code-bg);
+}
+.code-editor .cm-editor {
+  height: 460px;
+}
+.lab-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+}
+.lab-spacer {
+  flex: 1;
+}
+.lab-notice {
+  margin: 0;
+  padding: 0 20px 12px;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+}
+.lab-result {
+  padding: 14px 20px 16px;
+  border-top: 1px solid var(--border);
+}
+.lab-summary {
+  font-weight: 650;
+}
+.lab-summary.is-pass {
+  color: var(--good);
+}
+.lab-summary .dim {
+  font-weight: 400;
+}
+.lab-tests {
+  display: grid;
+  gap: 2px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.lab-tests li {
+  display: grid;
+  grid-template-columns: 1.4em minmax(0, 1fr);
+  column-gap: 6px;
+  padding: 5px 8px;
+  border-radius: 6px;
+}
+.lab-tests li.is-failed {
+  background: var(--bad-wash);
+}
+.lab-test-mark {
+  font-weight: 700;
+}
+.is-passed .lab-test-mark {
+  color: var(--good);
+}
+.is-failed .lab-test-mark {
+  color: var(--bad);
+}
+.lab-test-outcome {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+.lab-test-message {
+  grid-column: 2;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+.lab-output {
+  margin-top: 12px;
+  font-size: 0.88rem;
+}
+.lab-output summary {
+  cursor: pointer;
+  color: var(--text-secondary);
+}
+.lab-output pre,
+.lab-stdout {
+  margin: 8px 0 0;
+  padding: 12px 14px;
+  max-height: 360px;
+  overflow: auto;
+  border-radius: 8px;
+  background: var(--code-bg);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  white-space: pre;
+}
+@media (max-width: 900px) {
+  .code-editor .cm-editor {
+    height: 380px;
+  }
+  .lab-folder {
+    margin-left: 0;
+    width: 100%;
+  }
+}
