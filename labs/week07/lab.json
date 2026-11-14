@@ -1,0 +1,12 @@
+{
+  "title": "An off-policy actor-critic",
+  "edit": "lab.py",
+  "starter": "starter/lab.py",
+  "readonly": ["agent.py", "test_lab.py"],
+  "solution": "solution.py",
+  "steps": [
+    { "function": "next_state_value", "hint": "probs * (target_q - alpha * log_probs), summed over actions." },
+    { "function": "critic_loss", "hint": "gather the stored action's Q-value, then mse_loss against the targets." },
+    { "function": "actor_loss", "hint": "probs * (alpha * log_probs - Q.detach()), summed over actions, averaged over states." }
+  ]
+}

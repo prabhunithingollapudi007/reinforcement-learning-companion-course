@@ -1,0 +1,137 @@
+import { BigPicture, PlainWords, Recap, TryThis } from '../components/Blocks'
+import { Quiz } from '../components/Quiz'
+import { ActorCriticLoop, OffPolicySpectrum, QTarget } from '../figures/week07'
+import { LabRunner } from '../lab/LabRunner'
+import { ActorCriticCorridor, BufferValues } from '../playgrounds/week07/ActorCritic'
+import { week07Quiz } from './week07.quiz'
+
+<BigPicture>
+
+Policy gradients learn by watching: see what turned out well, do more of it. CS 224R puts the next step in one line: **learn to estimate what is good and bad, then do more of the good stuff.** That estimate is the critic. This week builds the critic properly, then asks how far the idea stretches: can the agent keep learning from everything it has ever done, as DQN did?
+
+</BigPicture>
+
+<ActorCriticLoop />
+
+## Three things worth estimating
+
+- $V^\pi(s)$: expected future reward from $s$, following $\pi$.
+- $Q^\pi(s, a)$: the same, but taking action $a$ first.
+- $A^\pi(s, a) = Q^\pi(s, a) - V^\pi(s)$, the **advantage**: how much better $a$ is than what the policy usually does there.
+
+They are tied together by $V^\pi(s) = \mathbb{E}_{a \sim \pi}[Q^\pi(s, a)]$. The policy gradient wants the advantage:
+
+$$
+\nabla_\theta J(\theta) \approx \frac{1}{N} \sum_{i} \sum_t \nabla_\theta \log \pi_\theta(a_{i,t} \mid s_{i,t})\; \hat A^{\pi}(s_{i,t}, a_{i,t})
+$$
+
+Fitting only $V$ is enough, because one real step turns it into an advantage: $\hat A(s_t, a_t) = r_t + \gamma \hat V(s_{t+1}) - \hat V(s_t)$. That is the TD error from Week 2, now doing a new job.
+
+## Fitting the critic
+
+Training the critic is supervised learning: inputs are states, labels are some estimate of the return. The choice of label is the one from Weeks 2 and 6.
+
+| Label for $\hat V(s_t)$ | Name | Trade-off |
+|---|---|---|
+| $\sum_{t' \ge t} r_{t'}$ | Monte Carlo | unbiased, noisy |
+| $r_t + \gamma \hat V(s_{t+1})$ | bootstrapped (TD) | steady, biased by the critic's own errors |
+| $\sum_{t'=t}^{t+n-1} \gamma^{t'-t} r_{t'} + \gamma^n \hat V(s_{t+n})$ | $n$-step | in between; the lecture notes this often works best |
+
+The on-policy algorithm, one iteration: collect a batch with the current policy; fit $\hat V$; compute $\hat A$ for every step; take a policy gradient step with those advantages.
+
+<ActorCriticCorridor />
+
+<TryThis>
+
+1. Press **Train 50 episodes** a few times. The orange bars rise first near the right end, where the prize is, and spread left. The blue bars follow: the actor learns from the critic, one cell at a time.
+2. Look at the averaged chart with the payout noise at ±2. After 300 episodes the actor-critic reaches the prize about 98% of the time; plain policy gradient about 85%.
+3. Raise the noise to ±3. Plain policy gradient now ends up *worse than chance*: a few unlucky payouts convince it the right-hand exit is bad, and it stops going there. The critic averages over payouts, so one bad draw moves it only a little.
+4. Set the noise to none. Now plain policy gradient is slightly quicker early on. With clean rewards the real return is a better signal than a critic that is still learning. **The critic earns its keep when returns are noisy.**
+
+</TryThis>
+
+## How off-policy can we go?
+
+<OffPolicySpectrum />
+
+The first step along the spectrum was last week: reuse one batch for several gradient steps, with importance weights and a clip to keep the policy close. That is PPO. The lecture calls it "starting to be off-policy".
+
+The next step is much bigger: keep **every** transition ever collected in a replay buffer, and train on random minibatches from it.
+
+## Why the critic has to change
+
+Swap a replay buffer into the algorithm above and it quietly breaks. The lecture asks the right question: when we fit $\hat V$ on all the data in the buffer, *which policy* is it the value function of?
+
+<BufferValues />
+
+<TryThis>
+
+1. At the starting settings the old policy rarely chose B and the current policy almost always does. The true value is 0.92. Fitting V to the buffer gives 0.36: an accurate answer to the wrong question.
+2. Read the third card: 0.89. The buffer contains enough of both actions to learn Q for each, and the current policy's preferences do the rest.
+3. Drag the old policy to 0%. The buffer no longer contains action B at all, and the third card cannot give an answer. Off-policy learning needs **coverage**: the data must include the actions the current policy would take.
+
+</TryThis>
+
+<PlainWords>
+
+A reward in the buffer is tied to the action an old policy chose. $V(s)$ has no way to say "but I would have chosen differently". $Q(s, a)$ takes the action as an input, so each stored transition is a valid example for the action that was actually taken, no matter who took it.
+
+</PlainWords>
+
+## The off-policy critic and actor
+
+<QTarget />
+
+The critic is trained on $Q^{\pi_\theta}(s, a) \approx r + \gamma\, Q^{\pi_\theta}(s', \bar a')$ with $\bar a' \sim \pi_\theta(\cdot \mid s')$. Compare with Q-learning: the same target, with the policy's own action in place of the max.
+
+The actor changes too. The stored actions came from old policies, so do not ask how good *they* were. Ask the critic about actions the *current* policy would take in the stored states:
+
+$$
+\nabla_\theta J(\theta) \approx \frac{1}{N} \sum_i \nabla_\theta \log \pi_\theta(\bar a_i \mid s_i)\; \hat Q(s_i, \bar a_i), \qquad s_i \text{ from the buffer},\ \bar a_i \sim \pi_\theta(\cdot \mid s_i)
+$$
+
+Using $\hat Q$ directly, with no baseline subtracted, is noisier per sample. That is acceptable because there is now far more data to average over.
+
+## Soft actor-critic
+
+**SAC** is the practical algorithm built this way, and the one the lecture points to. Three additions beyond the above are worth knowing:
+
+- An **entropy bonus**: the policy is rewarded for staying random, weighted by a temperature $\alpha$. This keeps it exploring without an ε.
+- The **reparameterisation trick**: for a Gaussian policy, write the action as $a = \mu_\theta(s) + \sigma_\theta(s)\,\epsilon$ and differentiate $\hat Q$ straight through it, a lower-variance gradient than the score function.
+- Stabilisers from Week 4: a target network for the critic, and usually two critics with the smaller one used in the target, against overestimation.
+
+## Choosing between them
+
+The lecture's practical guidance, reworded:
+
+| | PPO | SAC | DQN |
+|---|---|---|---|
+| Data | each batch a few times | replay buffer | replay buffer |
+| Critic | $V^\pi$ | $Q^\pi$ | $Q^*$ |
+| Main strength | stable, works out of the box | data-efficient | simple for discrete actions |
+| Main weakness | needs a lot of experience | more tuning, less stable | awkward with continuous actions |
+| Reach for it when | simulation is cheap | real-world data is costly | actions are few and discrete |
+
+Two further points from the lecture. PPO with a Monte Carlo critic does not lean on the Markov property; replay-buffer methods lean on it heavily. And both can be given a head start with demonstrations: to initialise the policy for PPO, or to pre-fill the buffer for SAC. Using demonstrations is next week's subject.
+
+## Python lab
+
+Implement the three functions at the core of an off-policy actor-critic for discrete actions: the value of the next state under the current policy, the critic's loss and the actor's loss. The last test trains on CartPole for about half a minute.
+
+<LabRunner week="week07" />
+
+## Quiz
+
+<Quiz questions={week07Quiz} />
+
+<Recap>
+
+- **Actor-critic**: the actor is the policy; the critic estimates value so that each action can be judged by an **advantage** instead of a single noisy return.
+- With $\hat V$, the one-step advantage is $r + \gamma \hat V(s') - \hat V(s)$. The critic's labels can be Monte Carlo, bootstrapped or $n$-step.
+- The critic matters most when returns are noisy: it averages over outcomes that a sampled return takes at face value.
+- Methods form a spectrum: policy gradient (one step per batch), PPO (several), off-policy actor-critic and Q-learning (replay buffer).
+- With a replay buffer, $\hat V$ would describe the old policies that filled it. Fit **$Q$** instead, with the next action drawn from the **current** policy, and train the actor on the current policy's actions too.
+- Off-policy learning needs **coverage** of the actions the current policy takes.
+- **SAC** adds an entropy bonus, the reparameterisation trick and stabilised critics. PPO trades data efficiency for stability; SAC the reverse.
+
+</Recap>
