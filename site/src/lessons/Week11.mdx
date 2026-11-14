@@ -1,0 +1,115 @@
+import { BigPicture, Derivation, PlainWords, Recap, TryThis } from '../components/Blocks'
+import { Quiz } from '../components/Quiz'
+import { BonusThenPlan, RegretOrPac, SampleThenSolve } from '../figures/week11'
+import { LabRunner } from '../lab/LabRunner'
+import { LongCorridor } from '../playgrounds/week11/Corridor'
+import { week11Quiz } from './week11.quiz'
+
+<BigPicture>
+
+In a bandit, exploring means pulling an arm you are unsure about. In an MDP the things you are unsure about are *states*, and reaching one can take a long sequence of the right actions, none of which pays off along the way. Random exploration is hopeless at this. The two ideas from last week, optimism and posterior sampling, both carry over, with one addition that makes all the difference: they explore by **planning**.
+
+</BigPicture>
+
+## Why random exploration fails
+
+<LongCorridor />
+
+<TryThis>
+
+1. With 8 cells, ε-greedy never finds the reward in 100 episodes. Its row shows why: it gets about halfway and no further. Once it has learned that retreating pays 0.05, advancing looks worthless everywhere it has been, so it only advances on a random step, and it needs seven of those in a row.
+2. Both other rows are filled to the end. The exploration bonus first reaches the reward at about episode 6, posterior sampling at about episode 10, and both collect the full 5 per episode from then on.
+3. Raise ε to 0.3 or 0.5. It hardly helps: more random steps, but still no reason to string seven advances together.
+4. Shorten the corridor to 4 cells. Now ε-greedy sometimes makes it. Read the last tile as you lengthen the corridor again: each extra cell multiplies the episodes ε-greedy needs by 2/ε. At 8 cells and ε = 0.1 that is over a billion.
+5. Lengthen it to 12. The other two need only a few more episodes: about 9 and 15.
+
+</TryThis>
+
+<PlainWords>
+
+ε-greedy explores by accident. It is fine when a few random steps are enough to stumble on something better, and useless when the reward sits behind a long run of specific choices. Directed exploration decides *where* it has not been and then goes there on purpose.
+
+</PlainWords>
+
+## Two ways to grade an explorer
+
+<RegretOrPac />
+
+- **Regret**, as last week: the total reward lost compared with acting optimally throughout.
+- **PAC** (probably approximately correct): with probability at least $1 - \delta$, the agent takes an action that is worse than optimal by more than $\epsilon$ on at most $N$ steps, where $N$ is *polynomial* in the size of the problem: $|S|$, $|A|$, $1/\epsilon$, $1/\delta$ and $1/(1-\gamma)$.
+
+ε-greedy on the corridor is not PAC: the number of bad steps grows exponentially with the corridor's length.
+
+## Optimism, by planning
+
+<BonusThenPlan />
+
+**MBIE-EB** (model-based interval estimation with exploration bonus) does exactly this. It keeps counts $n(s, a)$, estimates $\hat R$ and $\hat T$ from them, and solves
+
+$$
+\tilde Q(s, a) = \hat R(s, a) + \frac{\beta}{\sqrt{n(s, a)}} + \gamma \sum_{s'} \hat T(s' \mid s, a) \max_{a'} \tilde Q(s', a') .
+$$
+
+Pairs that have never been tried start at the largest possible value, $1/(1-\gamma)$ for rewards in $[0, 1]$. The bonus has the same $1/\sqrt{n}$ shape as UCB's, for the same reason: it is the width of a confidence interval. MBIE-EB is a PAC algorithm.
+
+Why should a slightly wrong model give a nearly right plan? The **simulation lemma** answers that, and is one of the two main ingredients of the PAC proof.
+
+<Derivation title="The simulation lemma: small model error, small value error" why="it is the standard tool for turning 'my model is accurate where I have data' into 'my plan is good', and it reappears in model-based RL next week.">
+
+Take two MDPs that differ a little: for every $(s, a)$, rewards differ by at most $\epsilon_R$, and transition distributions by at most $\epsilon_T$ in total (L1 distance). Fix a policy $\pi$, and let $\Delta = \max_s |V^\pi_1(s) - V^\pi_2(s)|$. Then
+
+$$
+\begin{aligned}
+|Q^\pi_1(s,a) - Q^\pi_2(s,a)| &\le \epsilon_R + \gamma \Big| \sum_{s'} T_1(s' \mid s,a)\big(V^\pi_1(s') - V^\pi_2(s')\big) + \sum_{s'} \big(T_1 - T_2\big)(s' \mid s,a)\, V^\pi_2(s') \Big| \\
+&\le \epsilon_R + \gamma \Delta + \gamma V_{\max}\, \epsilon_T .
+\end{aligned}
+$$
+
+The first sum is at most $\Delta$ because $T_1$ is a probability distribution; the second is at most $V_{\max}\epsilon_T$. Taking the maximum on the left gives $\Delta \le \epsilon_R + \gamma\Delta + \gamma V_{\max}\epsilon_T$, so
+
+$$
+\Delta \le \frac{\epsilon_R + \gamma V_{\max}\, \epsilon_T}{1 - \gamma} .
+$$
+
+Model errors turn into value errors, amplified by at most the horizon $1/(1-\gamma)$.
+
+</Derivation>
+
+## Posterior sampling
+
+<SampleThenSolve />
+
+**PSRL** in steps: keep a posterior over the reward and transition model of every $(s, a)$; at the start of each episode sample one complete MDP from it; compute that MDP's optimal $Q^*$; act greedily on it for the episode; update the posterior. As with bandits, each action is chosen with the probability that it is optimal given the data so far.
+
+Compared with optimism it needs a prior, and it plans once per episode rather than on every update. In practice it often explores as well or better, and it comes with guarantees of its own, stated as bounds on Bayesian regret.
+
+## Generalising across states
+
+Counting visits works when states can be listed. The same two ideas extend to settings with features: a **contextual bandit** sees a context (a user, a patient), and a linear model of reward with a confidence region gives both an optimistic estimate and a posterior to sample from. Information from one context tells you about similar ones, so far fewer pulls are needed than if each context were a separate bandit.
+
+For deep RL the principle survives and the bookkeeping gets approximate: exact counts are replaced by learned stand-ins for "how unfamiliar is this state?", used as a bonus.
+
+## What breaks next
+
+MBIE-EB and PSRL both learned a model and planned with it. So far in this course a model was either handed over (Week 1) or avoided (Weeks 2 to 9). Part 6 takes models seriously: planning far ahead with a known model by tree search, and learning a model when none is given.
+
+## Python lab
+
+Implement the two pieces of optimism-by-planning, the bonus and the optimistic value iteration, and watch it solve a corridor that ε-greedy cannot.
+
+<LabRunner week="week11" />
+
+## Quiz
+
+<Quiz questions={week11Quiz} />
+
+<Recap>
+
+- In an MDP, exploration means reaching unfamiliar **states**, which can need a long run of deliberate, unrewarded actions. Random exploration needs a number of tries **exponential** in that length.
+- **Regret** sums the size of all mistakes. **PAC** bounds the *number* of steps with a non-trivial mistake by a polynomial in the problem's size.
+- **Optimism by planning** (MBIE-EB): add a bonus $\beta/\sqrt{n(s,a)}$ to estimated rewards, assume untried pairs are as good as possible, and plan. Planning carries the bonus backwards, so the agent heads for the unknown on purpose.
+- The **simulation lemma**: a model that is accurate to $\epsilon_R$, $\epsilon_T$ gives values accurate to $(\epsilon_R + \gamma V_{\max}\epsilon_T)/(1-\gamma)$.
+- **PSRL**: sample one MDP from the posterior, solve it, follow its policy for an episode, update. Thompson sampling for whole worlds.
+- With features, the same ideas give **contextual bandits**; in deep RL, counts are approximated.
+
+</Recap>

@@ -1,0 +1,11 @@
+{
+  "title": "Exploring on purpose",
+  "edit": "lab.py",
+  "starter": "starter/lab.py",
+  "readonly": ["corridor.py", "test_lab.py"],
+  "solution": "solution.py",
+  "steps": [
+    { "function": "exploration_bonus", "hint": "np.where(counts > 0, beta / np.sqrt(np.maximum(counts, 1)), 0)." },
+    { "function": "optimistic_q", "hint": "Loop: V = Q.max(axis=1); Q = np.where(tried, mean + bonus + gamma * V[next_state], v_max)." }
+  ]
+}
