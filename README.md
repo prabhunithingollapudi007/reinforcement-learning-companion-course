@@ -36,8 +36,8 @@ Python lab, a quiz and a recap card.
 
 You need [Node.js](https://nodejs.org) 20 or newer.
 
-    git clone <this repository>
-    cd <the folder>
+    git clone https://github.com/prabhunithingollapudi007/reinforcement-learning-companion-course.git
+    cd reinforcement-learning-companion-course
     npm --prefix site install
     npm --prefix site run dev
 
