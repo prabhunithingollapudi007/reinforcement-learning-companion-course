@@ -89,7 +89,8 @@ export function Home({ completed }: { completed: number[] }) {
           This is an unofficial, independent study aid. It is not affiliated with, endorsed by, or produced by
           Stanford University or the instructors of either course. The lecture slides belong to their authors and are
           linked, not copied; the lesson text, figures and code here are original, and any mistakes in them are this
-          site's own. Progress you mark here is saved in this browser only.
+          site's own. Lesson text and figures are shared under CC BY 4.0 and the code under the MIT licence. Progress you
+          mark here is saved in this browser only.
         </p>
 
         <p>

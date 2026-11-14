@@ -120,6 +120,14 @@ an issue if something does not.
 4. Add the lab under `labs/weekNN/` with a `lab.json`, a `starter/` copy and tests,
    then embed it in the lesson with `<LabRunner week="weekNN" />`.
 
+## Licence
+
+- **Code** (the site, the interactive panels, the Python labs, tests and solutions): [MIT](LICENSE).
+- **Course content** (lesson text, quizzes, figures, lab instructions): [CC BY 4.0](LICENSE-CONTENT.md).
+  Reuse and adapt it freely, with credit.
+
+Neither licence covers the Stanford lecture materials, which are not part of this repository.
+
 ## Credits
 
 - [CS 234: Reinforcement Learning](https://web.stanford.edu/class/cs234/modules.html), Stanford, Winter 2026.
