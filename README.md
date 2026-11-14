@@ -45,13 +45,14 @@ only that lab's tests or lab file.
 
 ## Status
 
-Week 1 (MDPs and planning) is written. Weeks 2-16 show their planned outline.
+Part 1 is written: Week 1 (MDPs and planning), Week 2 (Monte Carlo and TD) and
+Week 3 (SARSA and Q-learning). Weeks 4-16 show their planned outline.
 
 ## Adding a week
 
 1. Plan the figures first: one per concept. Draw them in `site/src/figures/weekNN.tsx`.
-2. Write `site/src/lessons/WeekNN.mdx` around them, using the blocks in `src/components/Blocks.tsx`,
-   and register it in `site/src/lessons/index.ts`.
+2. Write `site/src/lessons/WeekNN.mdx` around them, using the blocks in `src/components/Blocks.tsx`.
+   A file with that name is picked up automatically.
 3. Put any algorithm code in `site/src/rl/` with tests that pin every number the lesson quotes.
 4. Add the lab under `labs/weekNN/` with a `lab.json`, a `starter/` copy and tests,
    then embed it in the lesson with `<LabRunner week="weekNN" />`.

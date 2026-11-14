@@ -1,0 +1,13 @@
+{
+  "title": "SARSA and Q-learning on the cliff",
+  "edit": "lab.py",
+  "starter": "starter/lab.py",
+  "readonly": ["cliff.py", "test_lab.py"],
+  "solution": "solution.py",
+  "steps": [
+    { "function": "epsilon_greedy", "hint": "Flip a coin with rng.random(); random action or np.argmax(Q[s])." },
+    { "function": "sarsa_update", "hint": "Target r + gamma * Q[s_next, a_next], or just r when done." },
+    { "function": "q_learning_update", "hint": "Target r + gamma * max(Q[s_next]), or just r when done." },
+    { "function": "train", "hint": "Choose the next action before updating, so SARSA can use it." }
+  ]
+}

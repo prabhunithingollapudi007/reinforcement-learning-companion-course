@@ -1,0 +1,152 @@
+import { BigPicture, Derivation, PlainWords, Recap, TryThis } from '../components/Blocks'
+import { Quiz } from '../components/Quiz'
+import { CourseQuadrant } from '../figures/week01'
+import { ControlLoop, SarsaAndQ, WhyQ } from '../figures/week03'
+import { LabRunner } from '../lab/LabRunner'
+import { CliffWalker } from '../playgrounds/week03/CliffWalker'
+import { EpsilonGreedyBars, MaxBias } from '../playgrounds/week03/Exploration'
+import { week03Quiz } from './week03.quiz'
+
+<BigPicture>
+
+Last week scored a fixed policy from experience. This week improves it, still with no model. Two new problems appear the moment the agent chooses its own actions: it needs values it can act on without looking ahead, and it has to keep trying actions it currently thinks are worse.
+
+</BigPicture>
+
+<CourseQuadrant here="tabular" />
+
+## From V to Q
+
+Policy iteration from Week 1 still applies: evaluate, then improve. But the improve step picked $\arg\max_a \big[ R(s,a) + \gamma \sum_{s'} P(s' \mid s, a) V(s') \big]$, which needs the model.
+
+<WhyQ />
+
+So model-free control learns $Q(s, a)$ directly, and improvement becomes $\pi(s) = \arg\max_a Q(s, a)$. Everything from last week carries over by replacing states with state-action pairs.
+
+## The exploration problem
+
+A new difficulty hides in that plan. If the policy is deterministic, it only ever takes one action per state, so the other entries of the Q-table never get data. The agent cannot learn about actions it does not try, and time spent trying them is time not spent on the action that looks best.
+
+The simplest fix is to be greedy most of the time and random the rest.
+
+<EpsilonGreedyBars />
+
+Two facts from the lecture make this more than a hack:
+
+- **Improvement still works.** The ε-greedy policy with respect to $Q^{\pi}$ is at least as good as $\pi$, for any ε-greedy $\pi$. The Week 1 guarantee survives.
+- **GLIE** (greedy in the limit of infinite exploration) is the condition for reaching the optimum: every state-action pair is tried infinitely often, and the policy becomes greedy in the limit. Decaying $\epsilon_k = 1/k$ over episodes satisfies it.
+
+<ControlLoop />
+
+**Monte Carlo control** is the loop above with last week's Monte Carlo update: play an episode with the ε-greedy policy, move each visited $Q(s, a)$ toward the return that followed, shrink ε, repeat. With a GLIE schedule it converges to $Q^*$.
+
+## SARSA and Q-learning
+
+Swap in the TD target and there is a choice to make: after landing in $s'$, which action's value goes in the target?
+
+<SarsaAndQ />
+
+$$
+\begin{aligned}
+\textbf{SARSA:} \quad & Q(s_t, a_t) \leftarrow Q(s_t, a_t) + \alpha \big( r_t + \gamma\, Q(s_{t+1}, a_{t+1}) - Q(s_t, a_t) \big) \\
+\textbf{Q-learning:} \quad & Q(s_t, a_t) \leftarrow Q(s_t, a_t) + \alpha \big( r_t + \gamma \max_{a'} Q(s_{t+1}, a') - Q(s_t, a_t) \big)
+\end{aligned}
+$$
+
+SARSA is named for the five things its update uses: $s, a, r, s', a'$.
+
+<PlainWords>
+
+**On-policy** means learning about the policy you are actually following, random steps included. **Off-policy** means learning about a different policy from the one generating the data. SARSA answers "how good is it to behave the way I do, exploring and all?" Q-learning answers "how good would the best behaviour be?" while behaving however it likes.
+
+</PlainWords>
+
+Those are different questions, and they can have different answers.
+
+<CliffWalker />
+
+<TryThis>
+
+1. Press **Train 500 episodes**. Q-learning finds the 11-step route along the cliff edge, the true shortest path. SARSA settles on a 15-step route over the top.
+2. Read the cards. While learning, SARSA collects about −22 per episode and Q-learning about −32. Q-learning has learned the better route and is getting the worse results, because an agent that takes a random step one time in ten should not be walking along a cliff.
+3. Reset and set ε to 0.02. The gap in the chart nearly closes. With almost no random steps, the edge route is safe and both methods do about equally well.
+4. Set ε to 0.3. SARSA's advantage while learning grows, and Q-learning still insists on the edge.
+
+</TryThis>
+
+Neither is wrong. Q-learning's route is optimal for a policy that stops exploring; SARSA's is optimal for the policy that is actually being run. If ε decays to zero, as GLIE requires, the two agree.
+
+**Q-learning converges to $Q^*$** in finite MDPs when the behaviour policy is GLIE and the step sizes shrink at the usual rate (they sum to infinity, their squares do not). The proof leans on the same contraction property as value iteration in Week 1.
+
+## The max is biased
+
+Q-learning's target takes a maximum over estimates, and estimates are noisy. That has a cost.
+
+<MaxBias />
+
+<TryThis>
+
+1. With 5 actions and noise 1, the largest estimate averages about +1.2, although every action is worth 0. The max does not find the best action; it finds the luckiest estimate.
+2. Raise the number of actions to 10. The bias grows to about +1.5: more candidates, more chances for one to be lucky.
+3. The bottom row stays centred on 0 throughout. The action it picks is still the lucky one, but an independent estimate of that action has no reason to share its luck.
+
+</TryThis>
+
+**Double Q-learning** applies that fix. Keep two tables, $Q_A$ and $Q_B$. On each step update one of them, chosen by coin flip, using the other to value the action it prefers:
+
+$$
+Q_A(s, a) \leftarrow Q_A(s, a) + \alpha \Big( r + \gamma\, Q_B\big(s', \arg\max_{a'} Q_A(s', a')\big) - Q_A(s, a) \Big)
+$$
+
+The same idea returns next week as Double DQN.
+
+<Derivation title="Why ε-greedy improvement cannot make things worse" why="it shows the Week 1 improvement argument does not depend on the policy being deterministic, which is the first step toward policies that are stochastic on purpose (policy gradients, Week 5).">
+
+Let $\pi$ be ε-greedy and $\pi'$ be ε-greedy with respect to $Q^\pi$. The value of following $\pi'$ for one step and $\pi$ afterwards is
+
+$$
+\sum_a \pi'(a \mid s)\, Q^\pi(s, a) = \frac{\epsilon}{|A|} \sum_a Q^\pi(s, a) + (1 - \epsilon) \max_a Q^\pi(s, a) .
+$$
+
+A maximum is at least any weighted average. Choose the weights $w_a = \big(\pi(a \mid s) - \epsilon/|A|\big) / (1 - \epsilon)$, which are non-negative and sum to 1 because $\pi$ is ε-greedy. Then
+
+$$
+(1 - \epsilon) \max_a Q^\pi(s, a) \ge \sum_a \Big( \pi(a \mid s) - \frac{\epsilon}{|A|} \Big) Q^\pi(s, a),
+$$
+
+and substituting gives $\sum_a \pi'(a \mid s) Q^\pi(s, a) \ge \sum_a \pi(a \mid s) Q^\pi(s, a) = V^\pi(s)$. From here the unrolling argument of Week 1 finishes the proof: $V^{\pi'} \ge V^{\pi}$.
+
+</Derivation>
+
+## What breaks next
+
+| | Monte Carlo control | SARSA | Q-learning |
+|---|---|---|---|
+| Target | return $G_t$ | $r + \gamma Q(s', a')$ | $r + \gamma \max_{a'} Q(s', a')$ |
+| Learns about | the policy it follows | the policy it follows | the greedy policy |
+| Updates | after each episode | after each step | after each step |
+| Known weakness | high variance | cautious while exploring | overestimates values |
+
+All three keep one number per state-action pair. That is fine for 40 cells and hopeless for a camera image or a board game. Week 4 replaces the table with a function approximator, and finds that Q-learning's three ingredients (bootstrapping, off-policy data and approximation) do not sit together comfortably.
+
+## Python lab
+
+Write ε-greedy action selection and both TD control updates, train them on the cliff, and confirm the two routes from the playground.
+
+<LabRunner week="week03" />
+
+## Quiz
+
+<Quiz questions={week03Quiz} />
+
+<Recap>
+
+- Without a model, control needs **$Q(s, a)$**: acting greedily on $V$ requires a one-step look-ahead that only the model can do.
+- An agent must **explore**: it cannot learn about actions it never takes. **ε-greedy** is greedy with probability $1 - \epsilon + \epsilon/|A|$ and gives every other action $\epsilon/|A|$.
+- ε-greedy improvement is still monotonic, and a **GLIE** schedule (explore everything forever, become greedy in the limit) reaches the optimum.
+- **SARSA** bootstraps from the action actually taken next: on-policy. **Q-learning** bootstraps from the best next action: off-policy.
+- On the cliff, Q-learning learns the optimal route and SARSA the route that is best while still exploring. As ε goes to zero they agree.
+- The max over noisy estimates is **biased upward**. Double Q-learning chooses with one estimate and evaluates with another.
+- Next: the table has to go.
+
+</Recap>
