@@ -1,0 +1,13 @@
+{
+  "title": "The losses behind RLHF, DPO and reasoning models",
+  "edit": "lab.py",
+  "starter": "starter/lab.py",
+  "readonly": ["toy.py", "test_lab.py"],
+  "solution": "solution.py",
+  "steps": [
+    { "function": "bradley_terry_loss", "hint": "return -F.logsigmoid(winner_scores - loser_scores).mean()." },
+    { "function": "regularised_optimum", "hint": "return torch.softmax(ref_probs.log() + reward / beta, dim=0)." },
+    { "function": "dpo_loss", "hint": "Implied rewards beta * (logp - ref_logp) for winner and loser, then bradley_terry_loss on them." },
+    { "function": "group_advantages", "hint": "(rewards - rewards.mean(dim=1, keepdim=True)) / (rewards.std(dim=1, keepdim=True, unbiased=False) + 1e-8)." }
+  ]
+}

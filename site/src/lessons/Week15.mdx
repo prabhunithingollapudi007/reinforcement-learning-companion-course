@@ -1,0 +1,184 @@
+import { BigPicture, Derivation, PlainWords, Recap, TryThis } from '../components/Blocks'
+import { Quiz } from '../components/Quiz'
+import { GroupOfAnswers, PostTraining, TokensAsActions } from '../figures/week15'
+import { LabRunner } from '../lab/LabRunner'
+import { DpoMatches, OverOptimised, Voting } from '../playgrounds/week15/Language'
+import { week15Quiz } from './week15.quiz'
+
+<BigPicture>
+
+A language model trained only to predict text is a remarkable imitator and a poor assistant. Turning one into the other is, at its core, reinforcement learning: the model is a policy, a response is an episode, and "people preferred this answer" is the reward. This week takes everything from Weeks 5 to 9 (policy gradients, trust regions, learned rewards, pessimism about data you do not have) and shows where each reappears, first for making models helpful and then for making them reason.
+
+</BigPicture>
+
+<PostTraining />
+
+## A language model is a policy
+
+<TokensAsActions />
+
+Instruction tuning, the second stage, is behaviour cloning on (instruction, good answer) pairs. It inherits the limits of imitation and adds some of its own:
+
+| Limit of imitating answers | Example |
+| --- | --- |
+| Many tasks have no single right answer to copy | "Write a story about a dog and her pet grasshopper" |
+| Every wrong token is penalised equally | Calling a film "a musical" instead of "an adventure" costs the same as a harmless synonym |
+| The answers being copied are not the best possible | Human-written demonstrations are a ceiling |
+| Demonstrations are expensive | Someone has to write every one |
+
+So: stop copying answers and optimise for what people prefer, $\max_\theta \mathbb{E}_{y \sim \pi_\theta(\cdot \mid x)} [R(x, y)]$. The policy gradient of Week 5 does this for any $R$, differentiable or not.
+
+## Rewards from comparisons
+
+Asking a person for $R(x, y)$ on every sample is far too slow, and people's absolute scores are inconsistent. Both problems have the fix from Week 9: ask which of two responses is better, and fit a **reward model** $r_\phi$ to the answers with the Bradley–Terry loss,
+
+$$
+L(\phi) = -\,\mathbb{E}_{(x,\, y_w,\, y_l)} \big[ \log \sigma\big( r_\phi(x, y_w) - r_\phi(x, y_l) \big) \big],
+$$
+
+where $y_w$ is the response that won the comparison and $y_l$ the one that lost.
+
+## RLHF: maximise the reward model, on a leash
+
+A reward model is trained on a limited set of comparisons and is wrong somewhere. An optimiser will find where. So **RLHF** maximises the reward model's score while paying for every step away from the starting model $\pi_{\text{ref}}$:
+
+$$
+\max_\theta \;\; \mathbb{E}_{y \sim \pi_\theta} \big[ r_\phi(x, y) \big] \;-\; \beta \, \mathrm{KL}\big( \pi_\theta(\cdot \mid x) \,\Vert\, \pi_{\text{ref}}(\cdot \mid x) \big).
+$$
+
+In practice this is optimised with PPO. Its solution can be written down exactly, which is what the playground shows:
+
+$$
+\pi^*(y \mid x) = \frac{1}{Z(x)} \, \pi_{\text{ref}}(y \mid x) \, \exp\!\Big( \frac{r_\phi(x, y)}{\beta} \Big).
+$$
+
+<OverOptimised />
+
+<TryThis>
+
+1. At β = 2.5 the optimised model has moved toward the good responses. People rate it 5.47, up from 4.40. The flattering response has grown from 5% to 20%, tolerable so far.
+2. Tighten to β = 20. Almost nothing changes from the starting model. A leash this short wastes the reward model.
+3. Loosen step by step toward β = 0.2 and watch the orange line. The reward-model score rises at every step, to 9.50.
+4. Watch the blue line over the same steps. What people think peaks at β = 2.5, is back below the starting model by β = 1 (4.29), and ends at 2.00, with the model giving the flattering response every time.
+5. The green line is the same optimisation with a perfect reward model. It never turns down. The leash exists only because the reward is learned.
+
+</TryThis>
+
+<PlainWords>
+
+The model is not being asked to please people. It is being asked to please a judge that was trained to guess what pleases people. Push gently and the two are the same thing. Push hard and the model becomes a specialist in the judge's blind spots: in real systems, flattery, excess formatting and confident padding. The training curve looks excellent throughout, because the training curve is the judge's opinion.
+
+</PlainWords>
+
+This is the offline-RL lesson of Week 9 in different clothes. There, a Q-function was wrong about actions missing from the data and the policy ran toward them. Here a reward model is wrong about responses unlike those it was trained on. The remedy is the same: stay near the data.
+
+## DPO: skip the reward model
+
+RLHF has three moving parts: a reward model, sampling from the language model, and a policy-gradient optimiser. **Direct preference optimisation** removes all three.
+
+<Derivation title="From the RLHF objective to the DPO loss" why="it is four lines, and it turns a reinforcement learning problem into a classification problem.">
+
+Take the closed-form solution above and solve it for the reward:
+
+$$
+r(x, y) = \beta \log \frac{\pi^*(y \mid x)}{\pi_{\text{ref}}(y \mid x)} + \beta \log Z(x).
+$$
+
+Every reward function corresponds to an optimal policy this way, so instead of searching over reward models we can search over policies and *define* the reward a policy $\pi_\theta$ implies:
+
+$$
+r_\theta(x, y) = \beta \log \frac{\pi_\theta(y \mid x)}{\pi_{\text{ref}}(y \mid x)} + \beta \log Z(x).
+$$
+
+Put this into the Bradley–Terry loss. Only the difference of two rewards for the same prompt appears, so the awkward $\log Z(x)$ cancels:
+
+$$
+L_{\text{DPO}}(\theta) = -\,\mathbb{E}_{(x,\, y_w,\, y_l)} \left[ \log \sigma\!\left( \beta \log \frac{\pi_\theta(y_w \mid x)}{\pi_{\text{ref}}(y_w \mid x)} - \beta \log \frac{\pi_\theta(y_l \mid x)}{\pi_{\text{ref}}(y_l \mid x)} \right) \right].
+$$
+
+Minimising it fits the implied reward to the comparisons, and the policy that implies the best-fitting reward is, by construction, the RLHF optimum for that reward.
+
+</Derivation>
+
+<DpoMatches />
+
+<TryThis>
+
+1. At step 0 the DPO model is the starting model: the bars differ by 0.449 and the loss is 0.693, a coin flip on every comparison.
+2. Drag the steps to 500. The difference is 0.010. By 1,000 the two sets of bars are indistinguishable, and people would rate the result 7.01.
+3. Change β. Both routes move together.
+4. Reduce the comparisons to 50. Both routes are now fitting less data, and both land on the same, noisier answer. DPO does not need less data; it needs less machinery.
+
+</TryThis>
+
+| | RLHF (reward model + PPO) | DPO |
+| --- | --- | --- |
+| Trains | A reward model, then the policy | The policy only |
+| Needs samples from the current model | Yes, continually | No: a fixed set of comparisons |
+| Kind of problem | Reinforcement learning | Classification |
+| Can use new data gathered during training | Yes | No |
+| Tuning | Delicate | Simple |
+
+## When the reward can be checked: reasoning
+
+Preferences are a soft, hackable signal. Some tasks have a hard one: the proof checks, the code passes its tests, the number is right. With a **verifiable reward** there is no reward model to fool, and optimisation can be pushed much further.
+
+It also changes what is worth learning. A model allowed to write out intermediate steps before answering, a **chain of thought**, can spend more computation on harder questions. That computation happens when the question is asked, not during training: a second dimension along which to scale. The crudest way to spend it is to sample many answers and vote.
+
+<Voting />
+
+<TryThis>
+
+1. With 17 samples the first question is answered correctly 81% of the time, up from 40%. With 129 it is essentially always right.
+2. The second question gets worse: 30% for one sample, 9% for 129. Voting amplifies whatever answer is most common, right or wrong.
+3. Both curves flatten. Past a point, more samples buy nothing. To do better the model itself has to reason better, which is what training is for.
+
+</TryThis>
+
+<GroupOfAnswers />
+
+Training a reasoning model is policy gradient with a checker for a reward. For each question, sample a group of $G$ complete responses, reasoning included; score each with the checker; and take a PPO-style step with advantages
+
+$$
+A_i = \frac{r_i - \operatorname{mean}(r_1, \dots, r_G)}{\operatorname{std}(r_1, \dots, r_G)}, \qquad
+L(\theta) = -\,\mathbb{E} \Big[ \min\big( \rho_i A_i, \; \operatorname{clip}(\rho_i, 1 - \epsilon, 1 + \epsilon) A_i \big) \Big] + \beta\, \mathrm{KL}(\pi_\theta \Vert \pi_{\text{ref}}),
+$$
+
+where $\rho_i = \pi_\theta(y_i \mid x) / \pi_{\text{old}}(y_i \mid x)$, exactly as in Week 6. Nobody tells the model how to reason. Whatever reasoning tends to end in checked-correct answers is reinforced, and in practice responses grow longer as accuracy grows.
+
+Step back and the pattern is Week 12's. AlphaZero combined learning with search at decision time. Reasoning models combine learning with thinking at answer time. General methods that turn more computation into better results, search and learning, keep winning.
+
+## What still goes wrong
+
+- **Over-optimised reward models**: the playground above, at scale.
+- **Sycophancy and style drift**: agreeing with the user and decorating answers are cheap ways to win comparisons.
+- **Control**: politeness, honesty, refusal and helpfulness are separate objectives folded into one number, and balancing them is hard.
+- **Not everything is checkable**: verifiable rewards cover mathematics and code well, and advice, writing and judgment hardly at all.
+
+One response is to let a model help write the reward: critique a draft answer against written principles, revise it, and train on the revision.
+
+## What breaks next
+
+A wrong token costs nothing but a retry. The last week moves to agents with bodies, where data is slow, failures break things, and the simulator is never quite the world.
+
+## Python lab
+
+Write the three losses of this week (Bradley–Terry, DPO, group-relative advantages) and check them on a model small enough to solve exactly.
+
+<LabRunner week="week15" />
+
+## Quiz
+
+<Quiz questions={week15Quiz} />
+
+<Recap>
+
+- A language model is a **policy**: state = text so far, action = next token, episode = response, reward at the end.
+- **Instruction tuning is imitation** and has its limits: no single right answer, all errors weighted equally, a ceiling at the demonstrations.
+- **Reward models** are fitted to pairwise comparisons with the Bradley–Terry loss.
+- **RLHF** maximises the reward model's score minus $\beta \cdot \mathrm{KL}$ from the starting model. Optimum: $\pi^* \propto \pi_{\text{ref}} \exp(r/\beta)$. Without the leash the model exploits the reward model's errors while its training score keeps rising.
+- **DPO** rewrites the reward in terms of the policy and substitutes it into the Bradley–Terry loss: a classification loss on comparisons that reaches the same optimum with no reward model, sampling or policy gradient.
+- **Verifiable rewards** (maths, code) cannot be fooled the same way and enable **reasoning models**, trained by policy gradient on checked answers. **GRPO** takes its baseline from a group of answers to the same question.
+- Spending **computation at answer time** is a second way to scale; voting is its simplest form and amplifies the most common answer, right or wrong.
+
+</Recap>

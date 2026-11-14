@@ -279,3 +279,9 @@ span.key-4 {
   stroke: var(--surface-1);
   stroke-width: 1;
 }
+
+/* Week 15 */
+.bar-before {
+  fill: var(--text-muted);
+  opacity: 0.55;
+}

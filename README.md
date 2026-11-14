@@ -45,8 +45,8 @@ only that lab's tests or lab file.
 
 ## Status
 
-Weeks 1-14 are written: MDPs and planning, Monte Carlo and TD, SARSA and Q-learning,
-function approximation with DQN, policy gradients, PPO, actor-critic methods, imitation learning, offline RL with reward learning, bandits, exploration in MDPs, tree search with model-based RL, multi-task, goal-conditioned and meta-RL, and hierarchy. Weeks 15-16 show their planned outline.
+Weeks 1-15 are written: MDPs and planning, Monte Carlo and TD, SARSA and Q-learning,
+function approximation with DQN, policy gradients, PPO, actor-critic methods, imitation learning, offline RL with reward learning, bandits, exploration in MDPs, tree search with model-based RL, multi-task, goal-conditioned and meta-RL, hierarchy, and RL for language models. Week 16 shows its planned outline.
 
 ## Adding a week
 
