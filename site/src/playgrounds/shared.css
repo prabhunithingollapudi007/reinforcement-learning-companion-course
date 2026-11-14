@@ -239,3 +239,33 @@ span.key-4 {
   font-size: 24px;
   font-weight: 650;
 }
+
+/* Week 13 */
+.reach-no {
+  fill: var(--surface-2);
+}
+.reach-start {
+  fill: var(--surface-2);
+  stroke: var(--text-primary);
+  stroke-width: 2.5;
+}
+.pull-clue {
+  fill: var(--series-4);
+}
+.pull-text {
+  fill: var(--text-primary);
+  font-size: 13px;
+  font-weight: 650;
+}
+.pull-text-on {
+  fill: #0b0b0b;
+  font-size: 13px;
+  font-weight: 700;
+}
+.swatch-clue {
+  background: var(--series-4);
+}
+.swatch-none {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}

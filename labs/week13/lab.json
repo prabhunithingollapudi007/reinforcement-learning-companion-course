@@ -1,0 +1,12 @@
+{
+  "title": "Hindsight relabelling",
+  "edit": "lab.py",
+  "starter": "starter/lab.py",
+  "readonly": ["grid.py", "test_lab.py"],
+  "solution": "solution.py",
+  "steps": [
+    { "function": "q_target", "hint": "return 1.0 if next_state == goal else gamma * Q[next_state, goal].max()." },
+    { "function": "hindsight_goals", "hint": "later = states[t + 1:]; return [later[i] for i in rng.integers(len(later), size=k)]." },
+    { "function": "replay_episode", "hint": "for t in reversed(range(len(actions))): update for goal, then for each g in hindsight_goals(...) with g != states[t]." }
+  ]
+}

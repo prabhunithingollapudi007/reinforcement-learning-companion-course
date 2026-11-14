@@ -1,0 +1,139 @@
+import { BigPicture, Derivation, PlainWords, Recap, TryThis } from '../components/Blocks'
+import { Quiz } from '../components/Quiz'
+import { HowTheTaskIsKnown, MemoryAcrossEpisodes, Relabel, TaskConditioning } from '../figures/week13'
+import { LabRunner } from '../lab/LabRunner'
+import { Hindsight, LearningToLearn } from '../playgrounds/week13/Tasks'
+import { week13Quiz } from './week13.quiz'
+
+<BigPicture>
+
+Everything so far learned one task from nothing, and the price was data: thousands or millions of steps per task. People do not learn that way. Experience with one espresso machine makes the next one easy. This week asks how an agent can spread the cost of learning over many tasks, in three steps: **share weights** across tasks, **share data** across tasks, and finally **learn how to learn** a new task quickly.
+
+</BigPicture>
+
+<HowTheTaskIsKnown />
+
+## Many tasks, one policy
+
+A task is an MDP. Two tasks may differ in their reward (pass or shoot), their dynamics (a different robot), their starting states, or all of these.
+
+<TaskConditioning />
+
+Appending $z$ to the state turns the collection of tasks into one ordinary MDP, so any algorithm from Weeks 4 to 9 applies unchanged: the policy becomes $\pi_\theta(a \mid s, z)$ and the critic $Q_\phi(s, a, z)$. Two practical habits help:
+
+- **Stratified batches.** Build each minibatch with some data from every task, so no task is forgotten for long and gradients are less noisy.
+- **One replay buffer per task**, which makes that sampling easy.
+
+In today's large robot policies $z$ is a sentence, fed to a language model that has been fine-tuned to output actions.
+
+## Goals as tasks
+
+A common special case: the task is "reach this state", so $z$ is a goal state $s_g$ and the reward needs no designing:
+
+$$
+r(s, s_g) = \mathbb{1}\big[\, \lVert s - s_g \rVert \le \epsilon \,\big] \qquad \text{or} \qquad r(s, s_g) = -\,d(s, s_g).
+$$
+
+The sparse version is exactly what you want and nearly impossible to learn from: until the agent happens to hit the goal it was given, every reward it sees is zero.
+
+## Sharing data: hindsight relabelling
+
+<Relabel />
+
+Experience collected while attempting one task is usually informative about others. If you can evaluate each task's reward yourself, you can store a transition again under a different task label with that task's reward. For goals, the natural choice is a goal the episode *did* reach: its final state, or any state that came later in the same episode. This is **hindsight experience replay**.
+
+<Hindsight />
+
+<TryThis>
+
+1. After 200 episodes on the 8 × 8 grid, the agent trained only on its given goals reaches 13 of the 63 goals from S, about what wandering achieves. With hindsight it reaches 48.
+2. The first two tiles say why. Given goals only, 8.7% of the learning updates had anything to learn from. With hindsight, 75% did.
+3. The chart: averaged over 10 agents, 22% against 61% of start-goal pairs solved at 200 episodes, and 69% against 97% at 1,600.
+4. Click a corner cell to move S there. The reachable region grows outward from wherever the agent has been.
+5. Set the grid to 10 × 10. Random goals are now further away, the plain learner gets even less signal, and the gap widens.
+6. Lower the hindsight goals per step to 1. Most of the benefit is already there: what matters is that failures stop being wasted.
+
+</TryThis>
+
+<PlainWords>
+
+You aimed for the bullseye and hit the wall. A plain learner records "missed". A hindsight learner also records "this is how you hit that spot on the wall", which is true, free, and one day useful. Do it for every throw and you soon know how to hit most of the wall, bullseye included.
+
+</PlainWords>
+
+Relabelling is legitimate only when three things hold:
+
+| Requirement | Why |
+| --- | --- |
+| The dynamics are the same across tasks | Otherwise the stored transition would not have happened under the other task |
+| You can compute the other task's reward | You have to fill in the new reward yourself |
+| The algorithm is off-policy | The data was collected by a policy pursuing a different goal |
+
+## Learning to learn
+
+Multi-task policies are told what to do. A **meta-RL** agent is put in a new task and has to find out. It is trained on many tasks drawn from some family, and judged on how well it does in a fresh task from the same family after only a few episodes.
+
+<LearningToLearn />
+
+<TryThis>
+
+1. With no practice, the top agent pulls levers at random and averages 2.78 of 10 on new tasks. UCB, a good general-purpose algorithm, averages 2.00: it carefully tries all nine levers once and has one pull left.
+2. Move practice to 20 tasks. The agent has a half-formed strategy and averages 7.25.
+3. At 100 tasks it has found the trick: pull the clue first, then the lever the clue names, for 9 of 10. All 20 separately trained agents discover this.
+4. Change which lever pays. The practised agent adapts in one pull. It has not memorised an answer; it has learned a *procedure* for finding the answer.
+5. The clue never pays anything. No rule told the agent to pull it. It learned that a pull spent on information is worth more than a pull spent guessing, which no amount of experience within one ten-pull task could teach.
+
+</TryThis>
+
+<PlainWords>
+
+There are two learners here, one inside the other. The slow one runs across hundreds of tasks and adjusts the agent's strategy. The fast one runs inside a single task and is nothing more than that strategy reacting to what it sees. "Fast reinforcement learning via slow reinforcement learning."
+
+</PlainWords>
+
+### How it is done with a network
+
+<MemoryAcrossEpisodes />
+
+The playground's agent keeps its memory as a short summary and its strategy as a table. A real system uses a recurrent network or a transformer, and trains it with an ordinary algorithm such as PPO, on the objective "total reward over all the episodes of a task, averaged over tasks".
+
+<Derivation title="Why the first episode can afford to earn nothing" why="it explains how exploration can be learned without ever being rewarded directly.">
+
+Let a trial be $N$ episodes in one task $\mathcal{T}$, with the memory carried throughout. The meta-objective is
+
+$$
+J(\theta) = \mathbb{E}_{\mathcal{T} \sim p(\mathcal{T})} \; \mathbb{E}_{\pi_\theta} \Big[ \sum_{n=1}^{N} \sum_{t} r^{(n)}_t \Big] .
+$$
+
+The return that credits an action in episode 1 includes the rewards of episodes $2, \dots, N$. So an action that earns nothing now but leaves the memory in a state from which later episodes earn more has a high return, and policy gradient increases its probability. Exploration is reinforced through the reward it makes possible later, across the episode boundary. In the lever family, pulling the clue has immediate reward 0 and return 9.
+
+</Derivation>
+
+Seen this way, meta-RL is RL in a partially observed MDP: the task identity $z$ is a hidden part of the state, and the agent's memory is its running estimate of it.
+
+Black-box meta-RL is general, since a network with memory can represent any learning procedure, and very fast on new tasks. Its costs are on the other side: meta-training is expensive and hard to optimise, especially when good exploration is rarely stumbled upon, and the result only works on tasks that resemble the training family.
+
+## What breaks next
+
+Sharing across tasks shortens learning, but one obstacle remains whatever you share: long tasks. "Clean the kitchen" is thousands of low-level actions with a single reward at the end. Next week breaks long tasks into pieces.
+
+## Python lab
+
+Write hindsight relabelling for a goal-reaching agent on a grid and measure what it buys.
+
+<LabRunner week="week13" />
+
+## Quiz
+
+<Quiz questions={week13Quiz} />
+
+<Recap>
+
+- A **task** is an MDP. **Multi-task RL** appends a task identifier $z$ to the state and trains one policy $\pi(a \mid s, z)$: one ordinary, larger MDP, with weights shared across tasks.
+- **Goal-conditioned RL** is the case $z = s_g$. Rewards come for free, but sparse goal rewards give almost no signal.
+- **Hindsight relabelling** stores experience again under a task it happened to do well at: for goals, a state the episode actually reached. It needs shared dynamics, computable rewards and an off-policy learner.
+- **Meta-RL** trains on a family of tasks so that a new task from the family can be solved after a few episodes. The agent must explore to identify the task, then exploit.
+- **Black-box meta-RL** (RL²): a policy with memory, rewards as inputs, memory kept across episodes of a task, trained by ordinary RL on total reward over the whole trial. Slow learning across tasks produces fast learning within one.
+- Exploration is learned because early information-gathering is credited with the later reward it enables.
+
+</Recap>
