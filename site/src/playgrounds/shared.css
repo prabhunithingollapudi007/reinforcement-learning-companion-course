@@ -182,3 +182,8 @@
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+
+/* Second-series dots (the base stylesheet defines slots 1 and 3). */
+.dot-2 {
+  fill: var(--series-2);
+}

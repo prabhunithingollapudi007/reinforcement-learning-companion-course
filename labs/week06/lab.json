@@ -1,0 +1,11 @@
+{
+  "title": "GAE and the clipped objective",
+  "edit": "lab.py",
+  "starter": "starter/lab.py",
+  "readonly": ["agent.py", "test_lab.py"],
+  "solution": "solution.py",
+  "steps": [
+    { "function": "gae", "hint": "One backward loop; multiply the bootstrap and the running sum by (1 - done)." },
+    { "function": "clipped_objective", "hint": "ratio = exp(new - old); torch.min of the unclipped and clamped terms; then mean." }
+  ]
+}

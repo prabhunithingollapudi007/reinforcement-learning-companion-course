@@ -1,0 +1,166 @@
+import { BigPicture, Derivation, PlainWords, Recap, Refresher, TryThis } from '../components/Blocks'
+import { Quiz } from '../components/Quiz'
+import { EstimatorLadder, PpoLoop, SurrogateBound } from '../figures/week06'
+import { LabRunner } from '../lab/LabRunner'
+import { ClipExplorer, LambdaDial } from '../playgrounds/week06/ClipAndLambda'
+import { StepSize } from '../playgrounds/week06/StepSize'
+import { week06Quiz } from './week06.quiz'
+
+<BigPicture>
+
+Last week's policy gradient works, wastefully. It throws away each batch of episodes after one gradient step, and that step is a gamble: too small and nothing happens, too large and the policy is wrecked. This week asks one question, how far can the policy safely move on the data it has, and the answer is **PPO**, the most widely used policy optimization method.
+
+</BigPicture>
+
+<Refresher title="KL divergence and importance sampling">
+
+**KL divergence** $D_{KL}(P \,\|\, Q) = \sum_x P(x) \log \frac{P(x)}{Q(x)}$ measures how different two distributions are. It is zero only when they are equal, and it is not symmetric. **Importance sampling** estimates an expectation under one distribution using samples from another, by weighting each sample with the ratio of the two probabilities: $\mathbb{E}_{x \sim P}[f(x)] = \mathbb{E}_{x \sim Q}\big[\tfrac{P(x)}{Q(x)} f(x)\big]$.
+
+</Refresher>
+
+## Two problems with plain policy gradients
+
+**Poor sample efficiency.** The gradient is an expectation under the *current* policy. After one step the policy has changed, and the data no longer comes from it.
+
+**The step size is hard to get right.** Gradient ascent takes steps in parameter space, but what matters is how much the *policy* changes, and the two are not the same. A small change in $\theta$ can be a large change in behaviour.
+
+<StepSize />
+
+<TryThis>
+
+1. At learning rate 1.0 the policy climbs to the top of the ridge, 0.90, within ten steps.
+2. Lower it to 0.1. After 40 steps it has only reached 0.61. Safe, and far too slow.
+3. Raise it to 10. One step carries the policy over the cliff, onto the flat part where the gradient is zero. Performance sits at −1 for good: the new policy collects only bad data, and that data contains no hint of which way is better.
+4. Keep the learning rate at 10 and turn on the limit. It reaches 0.90 again. Tighten the limit to 0.02: still safe, slower.
+
+</TryThis>
+
+No single learning rate is right, because the right size depends on where the policy is. The limit works because it is stated in the right units: how much the policy's behaviour may change, not how much its parameters may.
+
+## Reusing old data, carefully
+
+To take several steps on one batch, we need to predict how good a *new* policy $\pi'$ would be using data from the *old* one, $\pi$. An exact identity relates the two (the performance difference lemma):
+
+$$
+J(\pi') - J(\pi) = \frac{1}{1-\gamma}\; \mathbb{E}_{s \sim d^{\pi'},\, a \sim \pi'} \big[ A^{\pi}(s, a) \big]
+$$
+
+The new policy is better by the advantage, measured under the old policy, of the actions it takes. The catch is the subscript: states and actions are drawn from the new policy, which has not been run. Importance sampling fixes the actions. For the states, simply pretend they still come from the old policy:
+
+$$
+J(\pi') - J(\pi) \;\approx\; \mathcal{L}_\pi(\pi') = \frac{1}{1-\gamma}\; \mathbb{E}_{s \sim d^{\pi},\, a \sim \pi} \Big[ \frac{\pi'(a \mid s)}{\pi(a \mid s)}\, A^{\pi}(s, a) \Big]
+$$
+
+Everything on the right can be estimated from the old batch. And the approximation comes with a guarantee about how wrong it can be:
+
+$$
+\big| J(\pi') - \big( J(\pi) + \mathcal{L}_\pi(\pi') \big) \big| \;\le\; C \sqrt{ \mathbb{E}_{s \sim d^\pi} \big[ D_{KL}(\pi' \,\|\, \pi)[s] \big] }
+$$
+
+<SurrogateBound />
+
+<PlainWords>
+
+Old data can tell you about a new policy, as long as the new policy would have visited roughly the same states. The further the policy moves, the less the old data says about it. So improve the prediction, but do not move so far that the prediction stops meaning anything.
+
+</PlainWords>
+
+<Derivation title="Maximising the lower bound cannot make the policy worse" why="it is the same shape of argument as the policy improvement proof in Week 1, now for approximate, parameterised policies. It is the theory PPO approximates.">
+
+Let $\pi_{k+1}$ maximise the lower bound $\mathcal{L}_{\pi_k}(\pi') - C \sqrt{\mathbb{E}[D_{KL}(\pi' \| \pi_k)]}$ over the policy class.
+
+The old policy $\pi_k$ is itself a candidate, and it scores exactly zero: $\mathcal{L}_{\pi_k}(\pi_k) = \mathbb{E}_{\pi_k}[A^{\pi_k}(s,a)] = 0$ because advantages average to zero under their own policy, and $D_{KL}(\pi_k \| \pi_k) = 0$.
+
+So the maximum is at least zero. By the bound, $J(\pi_{k+1}) - J(\pi_k)$ is at least that maximum, hence at least zero. Each iteration improves, or at worst stays put.
+
+In practice the constant $C$ from the theory is so large when $\gamma$ is near 1 that the allowed steps are tiny. Trust-region methods and PPO keep the idea and tune the size of the step instead.
+
+</Derivation>
+
+## PPO
+
+Proximal policy optimization keeps the new policy close to the old one in a way that is cheap to compute. It has two variants.
+
+**KL penalty.** Maximise $\mathcal{L}_{\theta_k}(\theta) - \beta_k \bar D_{KL}(\theta \,\|\, \theta_k)$, and adapt $\beta_k$: double it if the policy moved too far this iteration, halve it if it barely moved.
+
+**Clipped objective.** Let $r_t(\theta) = \pi_\theta(a_t \mid s_t) / \pi_{\theta_k}(a_t \mid s_t)$ be the probability ratio. Maximise
+
+$$
+L^{CLIP}(\theta) = \mathbb{E}_t \Big[ \min\big( r_t(\theta)\, \hat A_t,\; \operatorname{clip}(r_t(\theta),\, 1-\epsilon,\, 1+\epsilon)\, \hat A_t \big) \Big], \qquad \epsilon \approx 0.2 .
+$$
+
+<ClipExplorer />
+
+<TryThis>
+
+1. Left panel, a good action. Drag the ratio above 1.2. The blue line goes flat: PPO stops rewarding the policy for making a good action still more likely. The incentive to move far from the old policy is removed.
+2. Same panel, drag the ratio below 1. The line follows the orange one all the way down. Making a good action *less* likely is penalised in full, however far it goes.
+3. Right panel, a bad action: the mirror image. Reducing its probability earns credit only down to 0.8; raising it is penalised without limit.
+4. Widen ε. The flat parts start further out: a larger trust region, more movement per batch, more risk.
+
+</TryThis>
+
+The `min` makes the objective a pessimistic estimate: it takes the clipped value only when that is the lower one. PPO cannot be tricked into a large move by an optimistic prediction.
+
+## Estimating the advantage
+
+Both variants need $\hat A_t$. Week 5 used the reward-to-go minus a baseline. With a learned critic $V$ there is a whole family of choices.
+
+<EstimatorLadder />
+
+Each rung can be written with the TD error $\delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)$ from Week 2: the $k$-step estimator is $\hat A^{(k)}_t = \sum_{l=0}^{k-1} \gamma^l \delta_{t+l}$. **Generalised advantage estimation** takes an exponentially weighted average of all the rungs, and the sum collapses to something very simple:
+
+$$
+\hat A^{GAE(\gamma, \lambda)}_t = \sum_{l \ge 0} (\gamma \lambda)^l\, \delta_{t+l}
+$$
+
+$\lambda = 0$ is the one-step TD error; $\lambda = 1$ is the full return minus $V(s_t)$.
+
+<LambdaDial />
+
+<TryThis>
+
+1. The critic starts 60% too low. Spread rises steadily with λ, from 0.6 to 4.5. Bias stays near 3.3 for most of the range and falls away only as λ approaches 1. Total error is lowest around λ = 0.8.
+2. Set the critic to **exact**. Now there is no bias to remove, extra real rewards only add noise, and the best λ is 0.
+3. Make the critic worse. The best λ moves toward 1. **The less you trust the critic, the more real reward you should use.**
+4. Watch the bars as you move λ. Near 0 nearly all the weight is on the 1-step estimator; near 1 it spreads over long horizons.
+
+</TryThis>
+
+In practice the critic is learned alongside the policy and is never exact, which is why values such as $\lambda = 0.95$ are typical.
+
+## PPO, assembled
+
+<PpoLoop />
+
+The lecture's summary of why it became the default:
+
+- It reuses each batch for several gradient steps, so it needs far fewer episodes than plain policy gradient.
+- The clip (or KL penalty) makes large, destructive policy changes unlikely.
+- It is simple to implement on top of any policy gradient code.
+- It converges to a local optimum, not necessarily the best policy.
+
+## What breaks next
+
+PPO leans on a critic for its advantage estimates but still discards its data after a handful of epochs: it is on-policy at heart. Week 7 looks at the critic properly, and at **off-policy actor-critic** methods that keep every transition in a replay buffer, as DQN did.
+
+## Python lab
+
+Implement the two pieces that make PPO what it is: generalised advantage estimation and the clipped objective. The last test trains on CartPole, so it takes about half a minute.
+
+<LabRunner week="week06" />
+
+## Quiz
+
+<Quiz questions={week06Quiz} />
+
+<Recap>
+
+- Plain policy gradients waste data (one step per batch) and are fragile to **step size**: steps are taken in parameter space, but safety depends on how much the policy changes.
+- The **surrogate objective** $\mathcal{L}_\pi(\pi')$ predicts a new policy's improvement from the old policy's data, by reweighting with $\pi'/\pi$ and reusing the old state distribution.
+- The prediction is accurate while the **KL divergence** between the policies is small. Maximising surrogate minus a KL penalty gives **monotonic improvement**.
+- **PPO** enforces closeness cheaply: with an adaptive KL penalty, or by **clipping** the ratio to $1 \pm \epsilon$ and taking the pessimistic minimum.
+- **GAE**: $\hat A_t = \sum_l (\gamma\lambda)^l \delta_{t+l}$. $\lambda$ trades the critic's bias against the return's variance; the worse the critic, the larger $\lambda$ should be.
+- A PPO iteration: collect, compute advantages, several epochs of minibatch steps on the clipped objective, refit the critic.
+
+</Recap>

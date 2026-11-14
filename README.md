@@ -45,8 +45,8 @@ only that lab's tests or lab file.
 
 ## Status
 
-Weeks 1-5 are written: MDPs and planning, Monte Carlo and TD, SARSA and Q-learning,
-function approximation with DQN, and policy gradients. Weeks 6-16 show their planned outline.
+Weeks 1-6 are written: MDPs and planning, Monte Carlo and TD, SARSA and Q-learning,
+function approximation with DQN, policy gradients, and PPO. Weeks 7-16 show their planned outline.
 
 ## Adding a week
 

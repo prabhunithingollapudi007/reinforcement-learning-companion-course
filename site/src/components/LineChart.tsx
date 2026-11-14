@@ -31,6 +31,8 @@ interface Props {
   /** x positions listed in the table view. Defaults to a spread of about ten. */
   tableRows?: number[]
   legendNote?: ReactNode
+  /** How to print an x position, when x is not simply a count. */
+  xFormat?: (k: number) => string
 }
 
 const W = 720
@@ -59,6 +61,7 @@ export function LineChart({
   format = defaultFormat,
   tableRows,
   legendNote,
+  xFormat = String,
 }: Props) {
   const [hover, setHover] = useState<number | null>(null)
   const plotW = W - M.left - M.right
@@ -129,7 +132,7 @@ export function LineChart({
         ))}
         {xTicks.map((k) => (
           <text key={k} x={x(k)} y={height - M.bottom + 18} textAnchor="middle" className="tick">
-            {k}
+            {xFormat(k)}
           </text>
         ))}
         <text x={M.left + plotW / 2} y={height - 6} textAnchor="middle" className="axis-title">
@@ -167,7 +170,7 @@ export function LineChart({
             <g transform={`translate(${tipX}, ${M.top + 22})`}>
               <rect width={tipW} height={tipH} rx={6} className="tooltip-box" />
               <text x={12} y={18} className="tooltip-title">
-                {xLabel.split(' (')[0]} {hover}
+                {xLabel.split(' (')[0]} {xFormat(hover)}
               </text>
               {series.map((s, i) => (
                 <g key={s.name}>
@@ -195,7 +198,7 @@ export function LineChart({
           <tbody>
             {rows.map((k) => (
               <tr key={k}>
-                <td>{k}</td>
+                <td>{xFormat(k)}</td>
                 {series.map((s) => (
                   <td key={s.name}>{k < s.values.length ? format(s.values[k]) : ''}</td>
                 ))}
