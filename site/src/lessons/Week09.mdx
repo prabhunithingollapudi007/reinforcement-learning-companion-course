@@ -1,0 +1,148 @@
+import { BigPicture, Bridge, PlainWords, Recap, TryThis } from '../components/Blocks'
+import { Quiz } from '../components/Quiz'
+import { OnlineOrOffline, RlhfPipeline, Stitching } from '../figures/week09'
+import { LabRunner } from '../lab/LabRunner'
+import { ExpectileDial, OptimismGap, PreferenceLearner } from '../playgrounds/week09/Offline'
+import { week09Quiz } from './week09.quiz'
+
+<BigPicture>
+
+Two questions finish this part of the course. First: given a fixed pile of logged experience and its rewards, can we learn a policy that is *better* than whatever produced the data, without collecting anything new? That is **offline RL**. Second: where did the rewards come from in the first place? For most real tasks nobody can write the reward down, so it has to be **learned from people**. Together these are how language models and many robots are trained today.
+
+</BigPicture>
+
+<OnlineOrOffline />
+
+## Why not just imitate?
+
+Offline data is attractive for the same reasons as demonstrations: it already exists, and collecting more with a half-trained policy may be unsafe or expensive. The difference from last week is that the data comes with rewards, and it need not be good.
+
+<Stitching />
+
+Imitation cannot outperform the policy that collected its data. Offline RL can, in two ways: it uses the reward to tell good behaviour from bad, and it can **stitch** together good pieces of different trajectories.
+
+## What goes wrong
+
+Why not run Week 7's off-policy actor-critic on the fixed dataset and stop? Recall its critic target: $r + \gamma\, Q(s', \bar a')$ with $\bar a'$ sampled from the *current* policy. As the policy improves it proposes actions the dataset does not contain, and the critic is asked to value them.
+
+<OptimismGap />
+
+<TryThis>
+
+1. Read the three cards. Acting on the critic everywhere expects about 1.2 and gets about 0.5. Choosing the best action *within the data* gets 0.99. Plain imitation gets 0.49.
+2. Press **Train another critic** a few times. Outside the band the orange curve is different every time and unrelated to the truth; inside it barely changes. The highest point is usually outside: across 300 critics, 79% of the time.
+3. That is last week's maximisation bias at full strength. Somewhere among all the actions with no data, the critic is wrong in the optimistic direction, and the argmax finds it.
+4. Drag the old policy far from the best action, to −1.0. Now the best action in the data is poor too. **No offline method can find what the data does not contain.** The naive choice sometimes lands somewhere better by luck, and has no way of knowing when.
+
+</TryThis>
+
+Online, this error corrects itself: the policy tries the over-rated action, sees a low reward, and the critic comes down. Offline there is no new data, and the error feeds on itself through the bootstrap. Avoiding it is the core of every offline RL method.
+
+## Idea one: only imitate, but selectively
+
+Train the policy only on actions that are in the dataset, weighting the good ones more.
+
+- **Filtered behaviour cloning.** Rank trajectories by return, keep the top fraction, imitate those. Crude, and a baseline every method should be compared against.
+- **Advantage-weighted regression.** Keep everything, and weight each example by how much better than average its action was:
+
+$$
+\theta \leftarrow \arg\max_\theta\; \mathbb{E}_{(s,a) \sim \mathcal{D}} \Big[ \log \pi_\theta(a \mid s)\, \exp\!\big( \tfrac{1}{\alpha} \hat A(s, a) \big) \Big]
+$$
+
+It is imitation learning with a weight on each sample, and it can be shown to approximate "maximise $Q$ subject to staying close to the data's policy in KL divergence": the trust region of Week 6, measured from the dataset instead of from the last iterate.
+
+The simplest advantage estimate uses Monte Carlo returns from the data, $\hat A = \sum_{t' \ge t} r_{t'} - \hat V(s_t)$. It never asks about an unseen action. Its weakness is that it measures advantage relative to the *old* policy, which allows only one step of improvement.
+
+## Idea two: a better value, still without leaving the data
+
+To improve by more than one step we need the value of a policy better than the one in the data, estimated without ever evaluating an action outside it.
+
+<ExpectileDial />
+
+<TryThis>
+
+1. At τ = 0.5 the fitted value is the mean, 0.41: what the old policy gets on average.
+2. Raise τ to 0.9. The value climbs to 0.66, weighted toward the good actions on the right.
+3. At τ = 0.99 it is 0.82, close to the best action in the data (0.94) and never above it.
+
+</TryThis>
+
+The asymmetric loss is **expectile regression**. With $u = Q(s, a) - V(s)$,
+
+$$
+L_\tau(u) = \big| \tau - \mathbb{1}(u < 0) \big|\, u^2 ,
+$$
+
+so for $\tau > 0.5$ an underestimate ($u > 0$) costs more than an overestimate. **Implicit Q-learning** builds a whole algorithm from it:
+
+1. Fit $V(s)$ to $Q(s, a)$ over state-action pairs in the data, with the expectile loss.
+2. Fit $Q(s, a)$ to $r + \gamma V(s')$ with ordinary squared error.
+3. Extract the policy by advantage-weighted regression using $Q - V$.
+
+No step samples an action from the policy. The improvement over the old policy is implicit in the expectile.
+
+<PlainWords>
+
+Offline RL has to be optimistic enough to improve on the data and pessimistic enough not to believe in actions nobody tried. Both ideas this week resolve that the same way: only ever ask "which of the things that *were* done turned out best?"
+
+</PlainWords>
+
+## Where do rewards come from?
+
+In games the reward is the score. For a robot tidying a desk or a model answering a question there is no score, and hand-written proxies get gamed. One alternative is to learn a **goal classifier** from example success states and use its output as the reward. Used naively this fails in the familiar way: the policy finds states the classifier was never trained on and happens to rate highly. The fix is to keep adding the policy's own visited states as negative examples while it trains, which is the same game a GAN plays.
+
+A second alternative needs no examples of success at all.
+
+## Rewards from comparisons
+
+People are poor at giving absolute scores and good at saying which of two things is better. Suppose a person prefers trajectory $\tau_w$ to $\tau_l$. Model the probability of that preference with a reward function $r_\theta$ and a sigmoid, and fit it by maximum likelihood:
+
+$$
+P(\tau_w \succ \tau_l) = \sigma\big( r_\theta(\tau_w) - r_\theta(\tau_l) \big), \qquad \max_\theta\; \mathbb{E} \big[ \log \sigma\big( r_\theta(\tau_w) - r_\theta(\tau_l) \big) \big]
+$$
+
+This is logistic regression on reward *differences*.
+
+<PreferenceLearner />
+
+<TryThis>
+
+1. With 50 comparisons the blue arrow is already close to the grey one, within about 10°. The person never stated a reward; it was read off their choices.
+2. Drop to 5 comparisons and press **Ask a different set of questions** several times. The arrow swings widely: on average it is about 24° off.
+3. Make the person more inconsistent. The curve shifts up: at 50 comparisons the error grows from about 6° to about 18°. Noisy judges are still usable; they just cost more questions.
+
+</TryThis>
+
+<RlhfPipeline />
+
+<Bridge title="the same idea in both courses">
+
+CS 234 reaches this point from imitation learning and names the model: it is the **Bradley–Terry** model of paired comparisons, from 1952. CS 224R reaches it from the question of task specification, and adds that the comparisons need not come from people: another model can be asked which of two responses is better, on the principle that judging is easier than generating. Both lectures end at the same place, the training of language models, which is Week 15.
+
+</Bridge>
+
+## What breaks next
+
+Everything in this part worked from data that somebody else decided to collect. The data's coverage set the ceiling: no method could find an action that was not in it. Part 5 goes back to the agent collecting its own experience and asks the question the earlier weeks dodged with ε-greedy: how should an agent choose what to try?
+
+## Python lab
+
+Three small functions that carry this week's ideas: advantage weights for weighted imitation, the expectile loss, and the preference loss for a reward model. Each has an end-to-end test on a small problem.
+
+<LabRunner week="week09" />
+
+## Quiz
+
+<Quiz questions={week09Quiz} />
+
+<Recap>
+
+- **Offline RL** learns from a fixed dataset with rewards and no further interaction. Unlike imitation it can beat the data's policy and **stitch** trajectories.
+- The core problem: the critic is asked about **out-of-distribution actions**, is wrong about some of them in the optimistic direction, and the policy seeks those out. With no new data the error is never corrected.
+- **Idea one**: train the policy only on dataset actions, weighted by advantage (filtered BC, **advantage-weighted regression**).
+- **Idea two**: estimate the value of a better-than-data policy without leaving the data, using **expectile regression** (**implicit Q-learning**).
+- No offline method can find good behaviour the data does not contain.
+- Rewards usually have to be **learned**: from goal examples with a classifier, or from **pairwise preferences** with $P(\tau_w \succ \tau_l) = \sigma(r(\tau_w) - r(\tau_l))$.
+- **RLHF**: collect comparisons, fit a reward model, run RL against it.
+
+</Recap>

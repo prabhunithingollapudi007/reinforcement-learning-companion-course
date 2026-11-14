@@ -1,0 +1,12 @@
+{
+  "title": "Weighted imitation, expectiles and preferences",
+  "edit": "lab.py",
+  "starter": "starter/lab.py",
+  "readonly": ["experiments.py", "test_lab.py"],
+  "solution": "solution.py",
+  "steps": [
+    { "function": "awr_weights", "hint": "torch.exp(advantages / alpha), then clamp at max_weight." },
+    { "function": "expectile_loss", "hint": "u = q - v; weight tau where u >= 0 and 1 - tau where u < 0; mean of weight * u squared." },
+    { "function": "preference_loss", "hint": "Minus the mean of logsigmoid(reward_winner - reward_loser)." }
+  ]
+}
