@@ -86,7 +86,7 @@ export default function App() {
         }}
       >
         <a className="brand" href="#/">
-          <span className="brand-kicker">Stanford CS 234 + CS 224R</span>
+          <span className="brand-kicker">Unofficial · CS 234 + CS 224R</span>
           <span className="brand-name">Reinforcement Learning Companion</span>
         </a>
 

@@ -66,7 +66,7 @@ export function StepSize() {
         </label>
       </div>
 
-      <svg viewBox={`0 0 ${W} ${H}`} className="chart" role="img" aria-label={`Performance landscape with the path of ${STEPS} gradient steps. Final performance ${final.toFixed(2)}.`}>
+      <svg viewBox={`0 0 ${W} ${H + 6}`} className="chart" role="img" aria-label={`Performance landscape with the path of ${STEPS} gradient steps. Final performance ${final.toFixed(2)}.`}>
         {[-1, 0, 1].map((v) => (
           <g key={v}>
             <line x1={M.left} x2={W - M.right} y1={py(v)} y2={py(v)} className={v === -1 ? 'axis-line' : 'grid-line'} />

@@ -7,7 +7,7 @@ import { week07Quiz } from './week07.quiz'
 
 <BigPicture>
 
-Policy gradients learn by watching: see what turned out well, do more of it. CS 224R puts the next step in one line: **learn to estimate what is good and bad, then do more of the good stuff.** That estimate is the critic. This week builds the critic properly, then asks how far the idea stretches: can the agent keep learning from everything it has ever done, as DQN did?
+Policy gradients learn by watching: see what turned out well, do more of it. The next step is to stop waiting for outcomes: **learn a model of how good each action is, and push the policy toward the actions it rates highly.** That estimate is the critic. This week builds the critic properly, then asks how far the idea stretches: can the agent keep learning from everything it has ever done, as DQN did?
 
 </BigPicture>
 

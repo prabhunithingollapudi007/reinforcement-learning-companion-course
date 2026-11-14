@@ -49,7 +49,7 @@ export function PostTraining() {
 
 /** A language model seen as an RL agent. */
 export function TokensAsActions() {
-  const tokens = ['An', 'earthquake', 'hit', 'the', 'city', '.']
+  const tokens = ['The', 'bridge', 'reopens', 'on', 'Monday', '.']
   return (
     <Figure
       height={230}

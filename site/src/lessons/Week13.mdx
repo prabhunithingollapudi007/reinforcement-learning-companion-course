@@ -7,7 +7,7 @@ import { week13Quiz } from './week13.quiz'
 
 <BigPicture>
 
-Everything so far learned one task from nothing, and the price was data: thousands or millions of steps per task. People do not learn that way. Experience with one espresso machine makes the next one easy. This week asks how an agent can spread the cost of learning over many tasks, in three steps: **share weights** across tasks, **share data** across tasks, and finally **learn how to learn** a new task quickly.
+Everything so far learned one task from nothing, and the price was data: thousands or millions of steps per task. People do not learn that way. Someone who can drive one car can drive a rental within minutes. This week asks how an agent can spread the cost of learning over many tasks, in three steps: **share weights** across tasks, **share data** across tasks, and finally **learn how to learn** a new task quickly.
 
 </BigPicture>
 
@@ -87,7 +87,7 @@ Multi-task policies are told what to do. A **meta-RL** agent is put in a new tas
 
 <PlainWords>
 
-There are two learners here, one inside the other. The slow one runs across hundreds of tasks and adjusts the agent's strategy. The fast one runs inside a single task and is nothing more than that strategy reacting to what it sees. "Fast reinforcement learning via slow reinforcement learning."
+There are two learners here, one inside the other. The slow one runs across hundreds of tasks and adjusts the agent's strategy. The fast one runs inside a single task and is nothing more than that strategy reacting to what it sees. The paper that introduced the idea put it in its title: fast reinforcement learning via slow reinforcement learning (Duan et al., 2016).
 
 </PlainWords>
 

@@ -87,7 +87,12 @@ export function LineChart({
     const step = niceStep(top - bottom, 4)
     for (let v = Math.ceil(bottom / step) * step; v <= top + 1e-9; v += step) yTicks.push(v)
   }
-  const tick = (v: number) => (log ? (v >= 1 ? String(v) : v.toExponential(0).replace('e-', 'e-')) : Number(v.toPrecision(4)).toString())
+  const superscript = (n: number) => String(n).replace(/[-0-9]/g, (c) => '⁻⁰¹²³⁴⁵⁶⁷⁸⁹'['-0123456789'.indexOf(c)])
+  const tick = (v: number) => {
+    if (!log) return Number(v.toPrecision(4)).toString()
+    if (v >= 1 && v < 1e5) return String(v)
+    return v >= 1 ? `10${superscript(Math.round(Math.log10(v)))}` : v.toExponential(0)
+  }
 
   const path = (values: number[]) =>
     values.map((v, k) => `${k === 0 ? 'M' : 'L'}${x(k).toFixed(1)},${y(v).toFixed(1)}`).join(' ')

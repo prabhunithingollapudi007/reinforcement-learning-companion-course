@@ -97,7 +97,7 @@ export function NoiseToActions() {
 
 const LW = 340
 const LH = 220
-const LM = { left: 30, right: 8, top: 24, bottom: 22 }
+const LM = { left: 36, right: 8, top: 24, bottom: 22 }
 const HORIZON = 100
 
 function LanePanel({ title, paths, failures, covered, slot }: { title: string; paths: number[][]; failures: number; covered: number; slot: 1 | 2 }) {

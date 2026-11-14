@@ -95,7 +95,7 @@ export function PolicyClimb() {
         </button>
       </div>
 
-      <svg viewBox={`0 0 ${W} ${H}`} className="chart" role="img" aria-label={`The policy is centred on action ${state.mu.toFixed(2)}. The reward peaks at action ${PEAK}.`}>
+      <svg viewBox={`0 0 ${W} ${H + 6}`} className="chart" role="img" aria-label={`The policy is centred on action ${state.mu.toFixed(2)}. The reward peaks at action ${PEAK}.`}>
         <line x1={M.left} x2={W - M.right} y1={py(0)} y2={py(0)} className="axis-line" />
         <path d={curvePath} className="series" style={{ stroke: 'var(--text-muted)' }} />
         {!off && <path d={policyPath} className="series series-1" />}

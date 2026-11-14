@@ -8,8 +8,8 @@ export function Home({ completed }: { completed: number[] }) {
         <div className="kicker">Start here</div>
         <h1>How to use this companion</h1>
         <p className="lede">
-          One 16-week path through reinforcement learning, built from two Stanford courses: CS 234 for the foundations
-          and CS 224R for deep methods and applications.
+          One 16-week path through reinforcement learning, following two Stanford courses: CS 234 for the foundations
+          and CS 224R for deep methods and applications. An unofficial companion, not part of either course.
         </p>
       </header>
 
@@ -86,8 +86,10 @@ export function Home({ completed }: { completed: number[] }) {
           ))}
         </ul>
         <p className="dim small">
-          This site is an independent study aid. The lecture slides belong to their authors and are linked, not
-          copied. Progress you mark here is saved in this browser only.
+          This is an unofficial, independent study aid. It is not affiliated with, endorsed by, or produced by
+          Stanford University or the instructors of either course. The lecture slides belong to their authors and are
+          linked, not copied; the lesson text, figures and code here are original, and any mistakes in them are this
+          site's own. Progress you mark here is saved in this browser only.
         </p>
 
         <p>

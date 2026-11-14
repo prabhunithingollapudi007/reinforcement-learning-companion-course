@@ -37,7 +37,7 @@ function ClipPanel({ advantage, epsilon, ratio }: { advantage: number; epsilon: 
           {r}
         </text>
       ))}
-      <text x={PW - M.right} y={PH - 10} textAnchor="end" className="axis-title">
+      <text x={px(1.5)} y={PH - 10} textAnchor="middle" className="axis-title">
         ratio r
       </text>
     </svg>
@@ -143,7 +143,7 @@ export function LambdaDial() {
       />
 
       <div className="chart-title">Weight this λ puts on the 1-step, 2-step, … estimators</div>
-      <svg viewBox={`0 0 ${BW} ${BH}`} className="chart" role="img" aria-label={`Weights on the k-step estimators: ${weights.slice(0, 4).map((w) => w.toFixed(2)).join(', ')} and so on.`}>
+      <svg viewBox={`0 0 ${BW} ${BH + 6}`} className="chart" role="img" aria-label={`Weights on the k-step estimators: ${weights.slice(0, 4).map((w) => w.toFixed(2)).join(', ')} and so on.`}>
         <line x1={40} x2={BW - 20} y1={BH - 34} y2={BH - 34} className="axis-line" />
         {weights.map((w, i) => {
           const cx = 40 + band * i + band / 2

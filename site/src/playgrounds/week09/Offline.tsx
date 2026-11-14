@@ -77,7 +77,7 @@ export function OptimismGap() {
           <span>true value</span>
         </li>
       </ul>
-      <svg viewBox={`0 0 ${W} ${H}`} className="chart" role="img" aria-label={`The critic's highest-rated action is ${picks.naive.action.toFixed(2)}: it expects ${picks.naive.believed.toFixed(2)} and would get ${picks.naive.actual.toFixed(2)}. The best action within the data is ${picks.inData.action.toFixed(2)}, worth ${picks.inData.actual.toFixed(2)}.`}>
+      <svg viewBox={`0 0 ${W} ${H + 6}`} className="chart" role="img" aria-label={`The critic's highest-rated action is ${picks.naive.action.toFixed(2)}: it expects ${picks.naive.believed.toFixed(2)} and would get ${picks.naive.actual.toFixed(2)}. The best action within the data is ${picks.inData.action.toFixed(2)}, worth ${picks.inData.actual.toFixed(2)}.`}>
         <rect x={px(Math.max(A_MIN, centre - width))} y={M.top} width={px(Math.min(A_MAX, centre + width)) - px(Math.max(A_MIN, centre - width))} height={H - M.top - M.bottom} className="horizon-band" />
         {[-1, 0, 1].map((v) => (
           <g key={v}>

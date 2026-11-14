@@ -7,7 +7,7 @@ import { week14Quiz } from './week14.quiz'
 
 <BigPicture>
 
-Cooking a meal, driving across a state, fixing a bug in a large codebase: these are long. Thousands of low-level decisions, one outcome at the end, and many chances to slip or get stuck on the way. The idea this week is old and simple. Do not learn the long task directly. Learn a **high level** that picks the next subgoal, and a **low level** that knows how to reach a subgoal. The hard part is in the details: what a subgoal is, who trains whom, and when to move on.
+Assembling a wardrobe, planning a week away, migrating a database: these are long. Thousands of low-level decisions, one outcome at the end, and many chances to slip or get stuck on the way. The idea this week is old and simple. Do not learn the long task directly. Learn a **high level** that picks the next subgoal, and a **low level** that knows how to reach a subgoal. The hard part is in the details: what a subgoal is, who trains whom, and when to move on.
 
 </BigPicture>
 
@@ -86,8 +86,8 @@ With $k = 1$ this is ordinary Q-learning. A decision process whose steps have va
 
 | Form | Example | Good when |
 | --- | --- | --- |
-| Language | "put the cup in the sink" | Tasks are semantic; people can label, correct and read it; a language model can be the high level |
-| An image of the result | a picture of the cup in the sink | Details are hard to say in words; unlabelled video can train the high level |
+| Language | "stack the plates on the shelf" | Tasks are semantic; people can label, correct and read it; a language model can be the high level |
+| An image of the result | a picture of the plates on the shelf | Details are hard to say in words; unlabelled video can train the high level |
 | A state | target position of gripper and object | The state is known and low-dimensional; goal-reaching RL applies directly |
 
 A good subgoal language is **expressive** (it can ask for every behaviour needed), **structured** (similar behaviours get similar subgoals) and at the **right level** (neither level is left with a job that is too hard).

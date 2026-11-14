@@ -1,4 +1,6 @@
-numpy
-pytest
-torch
-gymnasium
+# Weeks 1-3, 10-14 and 16 need only these two.
+numpy>=1.26
+pytest>=8
+# Weeks 4-9 and 15. The CPU build of PyTorch is enough.
+torch>=2.2
+gymnasium>=1.0
