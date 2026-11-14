@@ -45,8 +45,8 @@ only that lab's tests or lab file.
 
 ## Status
 
-Part 1 is written: Week 1 (MDPs and planning), Week 2 (Monte Carlo and TD) and
-Week 3 (SARSA and Q-learning). Weeks 4-16 show their planned outline.
+Weeks 1-4 are written: MDPs and planning, Monte Carlo and TD, SARSA and Q-learning,
+and function approximation with DQN. Weeks 5-16 show their planned outline.
 
 ## Adding a week
 

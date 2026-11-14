@@ -1,0 +1,12 @@
+{
+  "title": "The pieces of DQN",
+  "edit": "lab.py",
+  "starter": "starter/lab.py",
+  "readonly": ["agent.py", "test_lab.py"],
+  "solution": "solution.py",
+  "steps": [
+    { "function": "ReplayBuffer", "hint": "A deque with maxlen does the dropping for you; sample returns five tensors." },
+    { "function": "select_action", "hint": "Run the network under torch.no_grad(), then random with probability epsilon, else argmax." },
+    { "function": "dqn_loss", "hint": "gather the taken action's Q-value; build the target from target_net under no_grad; multiply the future by (1 - done)." }
+  ]
+}

@@ -1,0 +1,145 @@
+import { BigPicture, Bridge, PlainWords, Recap, Refresher, TryThis } from '../components/Blocks'
+import { Quiz } from '../components/Quiz'
+import { CourseQuadrant } from '../figures/week01'
+import { DqnLoop, TableOrFunction, TriadTriangle } from '../figures/week04'
+import { LabRunner } from '../lab/LabRunner'
+import { ReplayFit } from '../playgrounds/week04/ReplayFit'
+import { TriadLab } from '../playgrounds/week04/TriadLab'
+import { week04Quiz } from './week04.quiz'
+
+<BigPicture>
+
+Everything so far kept one number per state or state-action pair. That stops working long before the problems get interesting: an Atari screen has more possible states than atoms in the universe. This week replaces the table with a function. The algorithms barely change. What changes is that the guarantees from Weeks 1 to 3 stop holding, and **DQN** is the set of fixes that made it work anyway.
+
+</BigPicture>
+
+<CourseQuadrant here="deep" />
+
+<Refresher title="Stochastic gradient descent">
+
+To fit a function $\hat f(x; w)$ to targets $y$ by least squares, repeatedly take a sample and move the weights against the gradient of its squared error: $w \leftarrow w + \alpha\, (y - \hat f(x; w))\, \nabla_w \hat f(x; w)$. This works well when samples are independent and the targets do not depend on $w$. Both conditions are about to be broken.
+
+</Refresher>
+
+## From a table to a function
+
+<TableOrFunction />
+
+Write the action-value function as $\hat Q(s, a; w)$ with weights $w$. If an oracle told us the true $Q^\pi(s, a)$, fitting it would be ordinary supervised learning. There is no oracle, so each algorithm from the last two weeks supplies its own stand-in target:
+
+$$
+\Delta w = \alpha \big( \underbrace{\text{target}}_{\text{in place of } Q(s,a)} - \hat Q(s, a; w) \big) \nabla_w \hat Q(s, a; w)
+$$
+
+| Method | Target |
+|---|---|
+| Monte Carlo | the return $G_t$ |
+| SARSA | $r + \gamma\, \hat Q(s', a'; w)$ |
+| Q-learning | $r + \gamma \max_{a'} \hat Q(s', a'; w)$ |
+
+Notice the last two targets contain $w$. The update treats the target as a fixed number anyway and differentiates only $\hat Q(s, a; w)$. That shortcut has a name, a **semi-gradient**, and it matters below.
+
+## The deadly triad
+
+<TriadTriangle />
+
+The Bellman backup is a contraction (Week 1). Fitting a function to the backed-up values is a second step, and that step can stretch errors instead of shrinking them. When it stretches more than the backup shrinks, estimates grow without bound.
+
+<TriadLab />
+
+<TryThis>
+
+1. With everything on and all updates on A, the estimate passes 100 million within 200 updates. Each update raises A's value toward $2\gamma w$, which raises B's value too, because they share the weight. The target runs away from the estimate chasing it.
+2. Turn off **function approximation**. Converges: B has its own entry, so raising A does not raise the target.
+3. Turn it back on and turn off **bootstrapping**. Converges: the Monte Carlo target is the actual return, 0, and does not depend on $w$.
+4. Both on again. Drag **share of updates on A** down to 50%, the mix you get by following the policy. Converges: B's own updates pull $w$ down faster than A's push it up. The tipping point is about 80%.
+5. Back to 100% on A, and freeze the target for 20 updates. It still diverges, but reaches a few hundred instead of 100 million. A frozen target slows the feedback loop without removing it.
+
+</TryThis>
+
+<PlainWords>
+
+A bootstrapped target is made of the same weights you are adjusting. With a table, changing one entry leaves the target alone. With shared weights, the target moves when you move, and off-policy data can make it move away faster than you approach.
+
+</PlainWords>
+
+## Why naive deep Q-learning fails
+
+Q-learning with a neural network has all three corners. In practice two symptoms show up, and the lecture names both.
+
+**Correlated samples.** Consecutive steps of a trajectory look alike. Training on them in order pulls the whole function toward wherever the agent happens to be.
+
+<ReplayFit />
+
+<TryThis>
+
+1. Press **Play from the start**. On the left the line tilts to fit whichever stretch of the curve the trajectory is passing through, then tilts back. On the right it settles into the best compromise.
+2. Compare the numbers: about 0.11 against 0.04, close to three times the error, with the same model, the same data and the same learning rate. The best any line can do is 0.034.
+3. Raise the learning rate. The left line swings harder. A higher learning rate means recent samples count for more, which is exactly the problem.
+
+</TryThis>
+
+**Non-stationary targets.** Every gradient step changes $w$, and with it the target for the next step. The regression problem shifts under the optimiser's feet.
+
+## DQN
+
+<DqnLoop />
+
+DQN is Q-learning with a neural network and one fix for each symptom:
+
+- **Experience replay.** Store every transition $(s, a, r, s')$ in a buffer and train on random minibatches from it. This breaks the correlation between consecutive samples and lets each transition be used many times.
+- **Fixed Q-targets.** Compute targets with a second copy of the weights, $w^-$, that is only refreshed every $C$ steps: $y = r + \gamma \max_{a'} \hat Q(s', a'; w^-)$. Between refreshes the regression target holds still.
+
+Each step: act ε-greedily, store the transition, sample a minibatch, take a gradient step on $(y - \hat Q(s, a; w))^2$, and every $C$ steps copy $w$ into $w^-$. A terminal transition uses $y = r$.
+
+The lecture shows how much each piece mattered on Atari (scores from Mnih et al., 2015):
+
+| Game | Linear | Deep network | + fixed targets | + replay | + both (DQN) |
+|---|---|---|---|---|---|
+| Breakout | 3 | 3 | 10 | 241 | 317 |
+| Enduro | 62 | 29 | 141 | 831 | 1006 |
+| River Raid | 2345 | 1453 | 2868 | 4102 | 7447 |
+| Seaquest | 656 | 275 | 1003 | 823 | 2894 |
+| Space Invaders | 301 | 302 | 373 | 826 | 1089 |
+
+Two things stand out. A deep network on its own was no better than a linear one, and sometimes worse. And replay did most of the work.
+
+## Refinements
+
+DQN set off a long line of improvements. Three worth knowing by name:
+
+- **Double DQN** fixes the maximisation bias from Week 3. The online network chooses the next action and the target network values it: $y = r + \gamma\, \hat Q\big(s', \arg\max_{a'} \hat Q(s', a'; w);\, w^-\big)$. It needs no extra network.
+- **Prioritised replay** samples transitions with large TD error more often, on the grounds that they have the most to teach.
+- **Dueling networks** split the network's output into a state value and per-action advantages, so the value of a state can be learned without trying every action in it.
+
+<Bridge title="how CS 224R reaches the same algorithm">
+
+CS 224R arrives at Q-learning from the other direction: it starts with actor-critic methods (Week 7), then asks whether the actor can be dropped. If the critic is a Q-function, the best policy is just $\arg\max_a Q(s, a)$, so no separate policy network is needed. It then adds the same replay buffer, target network and double Q-learning, plus **n-step returns**: using $r_t + \gamma r_{t+1} + \dots + \gamma^n \max_a Q(s_{t+n}, a)$ as the target, which leans less on the bootstrapped estimate early in training.
+
+</Bridge>
+
+## What breaks next
+
+Value-based methods have two built-in limits. The policy is an $\arg\max$ over actions, which is easy with eighteen joystick positions and hard with a continuous robot arm. And the policy is always (nearly) deterministic, which is not always what you want. Next week drops the value function as the starting point and optimises the policy directly.
+
+## Python lab
+
+Build the pieces of DQN in PyTorch: the replay buffer, ε-greedy action selection and the loss with a target network. The last test trains your agent on CartPole for a few thousand steps, so it takes about half a minute.
+
+<LabRunner week="week04" />
+
+## Quiz
+
+<Quiz questions={week04Quiz} />
+
+<Recap>
+
+- A **function approximator** $\hat Q(s, a; w)$ replaces the table. It generalises across states, and for the same reason an update to one state moves others.
+- Each tabular method becomes a gradient step toward its usual target. TD targets contain $w$ but are treated as constants: a **semi-gradient**.
+- The **deadly triad**: function approximation, bootstrapping and off-policy data. Any two are safe; all three can diverge.
+- Naive deep Q-learning suffers from **correlated samples** and **non-stationary targets**.
+- **DQN** adds a **replay buffer** (random minibatches of past transitions) and a **target network** (weights $w^-$ refreshed every $C$ steps). On Atari, replay mattered most.
+- **Double DQN** chooses the action with one network and values it with the other, removing the upward bias of the max.
+- Next: optimise the policy itself.
+
+</Recap>
