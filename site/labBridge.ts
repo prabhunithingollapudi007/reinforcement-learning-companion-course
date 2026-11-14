@@ -3,8 +3,8 @@
 //
 // Safety: this is only active in `npm run dev`. It only touches the files a
 // lab's lab.json lists, only runs pytest or the lab file in that lab's folder,
-// and refuses any request that does not carry this server's token or that
-// arrives through a non-local address.
+// and refuses any request that does not carry this server's token, that does
+// not come over a loopback connection, or that was made by a non-local page.
 
 import { spawn } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
@@ -23,6 +23,7 @@ const RUN_TIMEOUT_MS = 120_000
 const MAX_BODY = 1_000_000
 const MAX_OUTPUT = 200_000
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]'])
+const LOOPBACK = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1'])
 
 interface Manifest {
   title: string
@@ -119,8 +120,25 @@ export function labBridge(): Plugin {
   }
 
   async function handle(req: IncomingMessage, res: ServerResponse, rest: string) {
+    // Three independent checks that the request comes from a page on this machine:
+    // the connection itself is loopback (this holds even if the dev server was
+    // started with --host and is reachable from the network), the address the
+    // browser used is local (defeats DNS rebinding), and, when the browser says
+    // which page is asking, that page is local too.
+    const notLocal = () => send(res, 403, { error: 'The lab bridge only answers on this machine.' })
+    if (!LOOPBACK.has(req.socket.remoteAddress ?? '')) return notLocal()
     const host = (req.headers.host ?? '').replace(/:\d+$/, '')
-    if (!LOCAL_HOSTS.has(host)) return send(res, 403, { error: 'The lab bridge only answers on this machine.' })
+    if (!LOCAL_HOSTS.has(host)) return notLocal()
+    const origin = req.headers.origin
+    if (origin) {
+      let originHost = ''
+      try {
+        originHost = new URL(origin).hostname
+      } catch {
+        /* not a URL: treated as non-local below */
+      }
+      if (!LOCAL_HOSTS.has(originHost)) return notLocal()
+    }
     if (req.headers['x-lab-token'] !== token) return send(res, 403, { error: 'Missing or wrong lab token.' })
 
     const [week, action = ''] = rest.split('?')[0].split('/')
