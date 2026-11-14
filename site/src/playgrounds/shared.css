@@ -213,3 +213,29 @@ span.key-4 {
 .bar-4 {
   fill: var(--series-4);
 }
+
+/* Week 12 */
+.tree-empty {
+  fill: var(--border);
+}
+.tree-payoff {
+  fill: var(--text-muted, var(--text-secondary));
+  opacity: 0.55;
+}
+.trace-real {
+  fill: none;
+  stroke: var(--text-primary);
+  stroke-width: 1.5;
+  stroke-dasharray: 2 4;
+  stroke-linecap: round;
+}
+.trace-real-end {
+  fill: var(--text-primary);
+  stroke: var(--surface);
+  stroke-width: 2;
+}
+.big-number {
+  fill: var(--text-primary);
+  font-size: 24px;
+  font-weight: 650;
+}

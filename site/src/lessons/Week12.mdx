@@ -1,0 +1,153 @@
+import { BigPicture, PlainWords, Recap, TryThis } from '../components/Blocks'
+import { Quiz } from '../components/Quiz'
+import { CourseQuadrant } from '../figures/week01'
+import { AlphaZeroLoop, DynaLoop, MctsLoop, ShootAndReplan } from '../figures/week12'
+import { LabRunner } from '../lab/LabRunner'
+import { ModelDrift, TreeSearch } from '../playgrounds/week12/Planning'
+import { week12Quiz } from './week12.quiz'
+
+<BigPicture>
+
+A model lets you try things in your head before trying them for real. This week has two halves. In the first the model is given, as in a board game, but the world is far too large to solve, so you **search**: look ahead from the position you are in and nowhere else. In the second there is no model, so you **learn one** from data, and then have to live with the fact that it is slightly wrong.
+
+</BigPicture>
+
+<CourseQuadrant here="search" />
+
+## Looking ahead from where you are
+
+Value iteration computes a value for every state. Search computes one decision: the best action *here*. The obvious way is to draw the tree of everything that could happen for the next $H$ steps and back the values up it. That tree has on the order of $(|S||A|)^H$ nodes, which is hopeless beyond a few steps.
+
+Sampling gets rid of the dependence on the number of states. **Simple Monte Carlo search** does the minimum: for each action available now, simulate many episodes that start with it and continue with some fixed, cheap rollout policy, and pick the action with the best average. That is one step of policy improvement on the rollout policy, and it has that step's weakness: it grades every action by what the *rollout policy* would do afterwards, not by what a good player would do.
+
+## Monte Carlo tree search
+
+<MctsLoop />
+
+Tree search fixes that weakness by improving the later choices too. It keeps the simulations it has run as a tree, and at every node in the tree chooses the next action to try with UCB from Week 10. This is **UCT**: at node $s$, pick
+
+$$
+a = \arg\max_a \; \underbrace{\bar Q(s, a)}_{\text{average result so far}} + c \sqrt{\frac{\ln N(s)}{N(s, a)}} .
+$$
+
+<TreeSearch />
+
+<TryThis>
+
+1. With 500 simulations, 474 went under A, 19 under B and 7 under C. The tree is lopsided on purpose: only 48 of its 120 nodes were ever built.
+2. Flat Monte Carlo, with the same 500 simulations spread evenly, estimates A at 0.38 and B at 0.53 and picks B. It is not being unlucky. With random later choices A really is worth 0.33.
+3. Drag the simulations down to 10, then up one notch at a time. The tree starts even, then leans toward A as the search discovers how to follow A up.
+4. The chart: tree search picks A in 51% of runs with 50 simulations, 90% with 200, and always with 1,000. Flat search gets *worse* with budget, because more samples make it more certain of the wrong answer.
+5. Lower c to 0.3. The search commits too early: 50% at 200 simulations and still only 80% at 1,000. Raise it to 1.4: at 100 simulations it has spread itself too thin (44%), but by 200 it has caught up.
+
+</TryThis>
+
+<PlainWords>
+
+Tree search is a bandit algorithm at every fork. It tries each move a little, returns to the ones that are working, and so its picture of "what happens after this move" gradually becomes "what happens after this move *if I then play well*". It can be stopped at any time and asked for its current best move, and it needs nothing from the model except the ability to simulate.
+
+</PlainWords>
+
+## AlphaZero: learning what to search
+
+Random playouts are a poor judge of a Go position, and trying every legal move is wasteful when most are plainly bad. AlphaZero replaces both with one network that takes a position $s$ and returns move probabilities $p(\cdot \mid s)$ and a value $v(s)$.
+
+<AlphaZeroLoop />
+
+Inside the search, selection uses the network's prior to decide where to look first,
+
+$$
+a = \arg\max_a \; Q(s, a) + c \, p(a \mid s) \, \frac{\sqrt{N(s)}}{1 + N(s, a)} ,
+$$
+
+and when the search reaches a new position it asks the network for $v$ instead of playing the game out. After the search, the move is drawn in proportion to $N(s, a)^{1/\tau}$: the visit counts are the improved policy.
+
+Training then closes the loop. For each position from self-play, the network is pushed toward the search's visit distribution $\pi$ and the game's final result $z$:
+
+$$
+L(\theta) = (z - v_\theta(s))^2 - \pi^\top \log p_\theta(\cdot \mid s) + \lambda \lVert \theta \rVert^2 .
+$$
+
+| Ingredient | What it buys |
+| --- | --- |
+| Policy prior in the search | A narrower tree: obviously bad moves are barely visited |
+| Value at the leaves | A shallower tree: no need to play to the end |
+| Self-play | An opponent of exactly the right strength at every stage, so wins and losses are always informative |
+| No human games, no hand-made features | The same method learned Go, chess and shogi |
+
+## When nobody gives you the model
+
+Outside games there is no rulebook. But transitions $(s, a, s')$ are labelled data, so a model $p_\theta(s' \mid s, a)$ can be fitted by ordinary supervised learning, and the reward the same way. The appeal is sample efficiency: once the model is good, experience is free.
+
+The catch is that the model is trained to be accurate for **one step**, and then used for many.
+
+<ModelDrift />
+
+<TryThis>
+
+1. With a 5% error in one parameter, a single step is off by 0.0099, about 1% of the size of the swing. The model looks excellent.
+2. After 60 steps the long rollout is off by 0.32: the orange curve has pulled ahead of the dotted one. Nothing went wrong along the way; each step simply started from the previous step's slightly wrong answer.
+3. The blue pieces, 5 steps each, never stray further than 0.048. Lengthen them to 20 and they visibly peel away.
+4. Set the error to 1%. Now even 30-step rollouts hug the truth. How far you can roll out depends on how good the model is.
+5. The chart's green line is the disagreement among five models with different errors. It rises with the orange error line, and unlike the error it can be measured without knowing the truth.
+
+</TryThis>
+
+<PlainWords>
+
+A learned model is a map drawn from the places you have been. Follow it for a few steps from a place you know and it is reliable. Follow it for a long way and you are navigating by accumulated guesswork. Worse, a planner that is searching for high reward will seek out exactly the places where the map is wrong in its favour, the same trap as offline RL in Week 9.
+
+</PlainWords>
+
+Three habits keep this under control:
+
+- **Short rollouts from real states.** Start imagined rollouts at states from the replay buffer and keep them to a few steps.
+- **Ensembles.** Train several models. Where they disagree, the model does not know: stop the rollout there, or subtract a penalty from the reward.
+- **Keep collecting.** The policy changes, so it visits new states, so the model needs data from them. Model learning and policy learning alternate.
+
+## Two ways to use a learned model
+
+**Imagine data for a model-free learner.**
+
+<DynaLoop />
+
+**Plan at decision time.**
+
+<ShootAndReplan />
+
+The simplest planner is **random shooting**: sample a few hundred action sequences, roll each out in the model, keep the best. The **cross-entropy method** improves on it by repeating: refit the sampling distribution to the best few percent of sequences and sample again. Executing only the first action and replanning at every step is **model predictive control**.
+
+| | Imagined data (Dyna, MBPO) | Decision-time planning (MPC) |
+| --- | --- | --- |
+| Cost when acting | One network evaluation | A full search every step |
+| Policy | A network, as in Weeks 5 to 7 | None: the planner is the policy |
+| Long horizons | Handled by the critic | Limited to the planning horizon, unless a value function is added at the end |
+| Change of goal | Needs retraining | Change the reward and replan |
+
+AlphaZero sits at the junction: it plans at decision time *and* distils the plans into a network.
+
+## What breaks next
+
+Every method so far learns one task, starting from nothing. A robot that has learned to open one drawer knows nothing about the next. Part 7 looks at agents that learn many tasks at once, reach goals they are told about, and get faster at learning itself.
+
+## Python lab
+
+Write the scoring rule of tree search, then learn a model of a system you are not told the equations of and steer it by planning.
+
+<LabRunner week="week12" />
+
+## Quiz
+
+<Quiz questions={week12Quiz} />
+
+<Recap>
+
+- **Search** answers "what should I do here?" rather than solving every state. A full lookahead tree grows as $(|S||A|)^H$; sampling avoids that.
+- **Simple Monte Carlo search** grades each action by rollouts of a fixed policy: one step of policy improvement, misled when good moves need good follow-ups.
+- **MCTS** repeats select, expand, simulate, back up. **UCT** selects with UCB at every node, so the tree grows toward good lines and later choices improve too.
+- **AlphaZero**: a network supplies move priors and leaf values to the search; the search's visit counts and the game result train the network; self-play supplies the games.
+- A **learned model** is fitted by supervised learning on transitions. Small one-step errors **compound** over a rollout, and a planner will exploit them.
+- Defences: **short rollouts from real states**, **ensembles** (disagreement signals ignorance), and continually collecting new data.
+- Use the model to **imagine data** for a model-free learner (Dyna, MBPO), or to **plan at decision time** (random shooting, CEM), executing one action and replanning (MPC).
+
+</Recap>

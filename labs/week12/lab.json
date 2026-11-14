@@ -1,0 +1,13 @@
+{
+  "title": "Search, and planning with a learned model",
+  "edit": "lab.py",
+  "starter": "starter/lab.py",
+  "readonly": ["world.py", "test_lab.py"],
+  "solution": "solution.py",
+  "steps": [
+    { "function": "uct_scores", "hint": "child_totals / child_visits + c * np.sqrt(np.log(parent_visits) / child_visits)." },
+    { "function": "fit_linear_model", "hint": "X = np.column_stack([states, actions]); W = np.linalg.lstsq(X, next_states, rcond=None)[0]; return W[:2].T, W[2]." },
+    { "function": "imagined_returns", "hint": "states = np.tile(state, (n, 1)); loop over t: total += reward(states, a_t); states = states @ A.T + a_t[:, None] * B." },
+    { "function": "plan", "hint": "Sample candidates, score with imagined_returns, return float(candidates[np.argmax(returns), 0])." }
+  ]
+}
