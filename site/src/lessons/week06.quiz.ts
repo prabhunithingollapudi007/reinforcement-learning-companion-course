@@ -39,7 +39,7 @@ export const week06Quiz: Question[] = [
     options: [
       'Always',
       'When the two policies are close in KL divergence',
-      'When γ is small',
+      'When the batch of data is large',
       'When the advantage is positive',
     ],
     answer: 1,

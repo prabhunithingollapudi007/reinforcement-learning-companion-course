@@ -25,7 +25,7 @@ The simulator is wrong in two ways. Some errors are **parametric**: the right eq
 1. The simulator assumed friction 0.40 and the real floor is 0.30. The policy tuned for 0.40 sends the puck 33 cm past the line. It was perfect in simulation.
 2. The policy tuned across 0.20 to 0.60 is 9 cm long. The one that nudges first is 5 cm short, and that 5 cm is entirely its measurement error.
 3. Move the real floor to 0.60. Now the range-tuned policy (46 cm short) is *worse* than the single-simulator one (33 cm short). One launch speed cannot suit every floor, so it settled on a cautious speed that avoids big overshoots on slippery floors and pays for it on sticky ones.
-4. Sweep the real floor from 0.20 to 0.80 and watch the blue line stay flat. Adapting is the only one of the three that is right everywhere.
+4. Sweep the real floor from 0.20 to 0.80 and watch the blue line stay flat. Adapting is the only one of the three whose miss does not depend on the floor.
 5. Widen the randomisation to ±0.30. The compromise gets more cautious still: 46 cm short even at 0.40, the floor it was centred on.
 6. Raise the measurement error to 20%. The adaptive policy degrades gracefully, by about as much as it mismeasures.
 
@@ -67,7 +67,7 @@ Like the language models of Week 15, it is good and not good enough. Imitation t
 
 1. The pretrained policy succeeds 80.7% of the time. If a job has five such stages in a row, that is 34% end to end.
 2. Step the rounds forward. Imitating every success creeps up: 85.7% after one round, 94.3% after eight (74% for five stages).
-3. Imitating only better-than-average attempts reaches 91.4% after one round and 98.8% after two (94% for five stages).
+3. Imitating only better-than-average attempts reaches 91.4% after one round and 98.8% after two (94% for five stages). These are averages over 200 runs of 100 attempts per round, so they sit slightly off the exact values the formula below gives.
 4. Look at the bars to see why. A success with the 85% grasp is still a success, so the orange rule keeps rewarding it. The blue rule asks a sharper question: was this choice better than what the policy usually does?
 5. Drop to 20 attempts per round. The blue rule now has to judge each way of grasping from a handful of tries, and sometimes throws away the best one by bad luck: on average it now levels off at 98.5%, short of the 99% ceiling. A value estimate is only as good as its data.
 
@@ -158,8 +158,8 @@ Tune a policy in a simulator with the wrong friction, make it robust, make it ad
 - Robots make data expensive and reliability essential. Cheap experience comes from **simulation** and from **pretrained policies**; RL closes the gap each leaves.
 - The **reality gap** has parametric parts (wrong numbers) and non-parametric parts (missing physics).
 - **Domain randomisation** trains one robust policy over many simulators; too wide a range makes it cautious. **Learning to adapt** infers the hidden physics from recent history, usually by a privileged **teacher** and an imitating **student**. **Real-to-sim** fixes the simulator from real data.
-- Imitation-trained robot policies level off around 80%. A task of five 80% stages succeeds a third of the time; five 99% stages, 95%.
-- **Imitating your own successes** always improves the policy, by $\operatorname{Var}(q)/J$, which is slow near the top. **Advantage-conditioned** retraining with a fitted value function is sharper and remains supervised learning: iterated offline RL.
+- Imitation-trained robot policies often level off around 80%, well short of what autonomy needs. A task of five 80% stages succeeds a third of the time; five 99% stages, 95%.
+- **Imitating your own successes** never makes the policy worse given enough data, and improves it by $\operatorname{Var}(q)/J$, which is slow near the top. **Advantage-conditioned** retraining with a fitted value function is sharper and remains supervised learning: iterated offline RL.
 - For online improvement, train a **small policy beside the frozen large one**.
 - The whole course is four questions: model, demonstrations, interaction, reward.
 

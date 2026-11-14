@@ -76,7 +76,7 @@ Those are different questions, and they can have different answers.
 
 Neither is wrong. Q-learning's route is optimal for a policy that stops exploring; SARSA's is optimal for the policy that is actually being run. If ε decays to zero, as GLIE requires, the two agree.
 
-**Q-learning converges to $Q^*$** in finite MDPs when the behaviour policy is GLIE and the step sizes shrink at the usual rate (they sum to infinity, their squares do not). The proof leans on the same contraction property as value iteration in Week 1.
+**Q-learning converges to $Q^*$** in finite MDPs when every state-action pair keeps being visited and the step sizes shrink at the usual rate (they sum to infinity, their squares do not). The behaviour policy does not have to become greedy: that is the off-policy point. Becoming greedy is needed only for the policy being *run* to become optimal, and it is what SARSA needs to reach $Q^*$. The proof leans on the same contraction property as value iteration in Week 1.
 
 ## The max is biased
 

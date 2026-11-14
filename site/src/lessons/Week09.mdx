@@ -31,7 +31,7 @@ Why not run Week 7's off-policy actor-critic on the fixed dataset and stop? Reca
 
 1. Read the three cards. Acting on the critic everywhere expects about 1.2 and gets about 0.5. Choosing the best action *within the data* gets 0.99. Plain imitation gets 0.49.
 2. Press **Train another critic** a few times. Outside the band the orange curve is different every time and unrelated to the truth; inside it barely changes. The highest point is usually outside: across 300 critics, 79% of the time.
-3. That is last week's maximisation bias at full strength. Somewhere among all the actions with no data, the critic is wrong in the optimistic direction, and the argmax finds it.
+3. That is Week 3's maximisation bias at full strength. Somewhere among all the actions with no data, the critic is wrong in the optimistic direction, and the argmax finds it.
 4. Drag the old policy far from the best action, to −1.0. Now the best action in the data is poor too. **No offline method can find what the data does not contain.** The naive choice sometimes lands somewhere better by luck, and has no way of knowing when.
 
 </TryThis>

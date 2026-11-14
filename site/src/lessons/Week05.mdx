@@ -22,7 +22,7 @@ To maximize $J(\theta)$, repeatedly step in the direction of its gradient: $\the
 
 ## Why learn the policy directly
 
-Three reasons, the first two practical. With continuous actions, $\arg\max_a Q(s, a)$ is itself an optimization problem, while a policy network can simply output an action. Small changes in $\theta$ give small changes in behaviour, which is gentler than a greedy policy flipping when two Q-values cross. And the third: sometimes the best policy is random, and a greedy policy never is.
+Three reasons, the first two practical. With continuous actions, $\arg\max_a Q(s, a)$ is itself an optimization problem, while a policy network can simply output an action. Behaviour changes smoothly with $\theta$, with none of the sudden flips a greedy policy makes when two Q-values cross (smooth is not the same as small, as Week 6 shows). And the third: sometimes the best policy is random, and a greedy policy never is.
 
 <AliasedCorridor />
 
@@ -116,7 +116,7 @@ $$
 
 </TryThis>
 
-<Derivation title="A baseline does not bias the gradient" why="it is two lines, and the same fact is what lets Week 7 replace the return with an advantage estimate from a learned critic.">
+<Derivation title="A baseline does not bias the gradient" why="it is two lines, and the same fact is what lets Week 7 subtract a learned value function and judge each action by its advantage.">
 
 For any $b(s)$ that does not depend on the action,
 

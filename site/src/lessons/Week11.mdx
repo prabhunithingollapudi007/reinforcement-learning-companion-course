@@ -71,7 +71,7 @@ $$
 \Delta \le \frac{\epsilon_R + \gamma V_{\max}\, \epsilon_T}{1 - \gamma} .
 $$
 
-Model errors turn into value errors, amplified by at most the horizon $1/(1-\gamma)$.
+Model errors turn into value errors. Reward errors are amplified by the horizon $1/(1-\gamma)$; transition errors by $V_{\max}$ times the horizon, which for rewards in $[0, 1]$ is the horizon squared.
 
 </Derivation>
 

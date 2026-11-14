@@ -94,6 +94,6 @@ export const week08Quiz: Question[] = [
     prompt: 'If an expert’s policy is optimal for some reward, how many reward functions are consistent with its behaviour?',
     options: ['Exactly one', 'A handful', 'Infinitely many', 'None'],
     answer: 2,
-    explain: 'This is the lecture’s check. Scaling a reward keeps the same optimal policy, and the all-zero reward makes every policy optimal. Inverse RL needs an extra principle to choose.',
+    explain: 'This is the lecture’s check. Scaling a reward by a positive constant keeps the same optimal policy, and the all-zero reward makes every policy optimal. Inverse RL needs an extra principle to choose.',
   },
 ]

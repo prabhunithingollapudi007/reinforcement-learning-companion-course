@@ -60,7 +60,7 @@ export const week03Quiz: Question[] = [
       'The shorter route has lower reward',
     ],
     answer: 1,
-    explain: 'The edge route is optimal for an agent that never missteps. An ε-greedy agent missteps one time in ten, and SARSA’s values account for that because they describe the policy actually being followed.',
+    explain: 'The edge route is optimal for an agent that never missteps. An ε-greedy agent takes a random step one time in ten, and SARSA’s values account for that because they describe the policy actually being followed.',
   },
   {
     prompt: 'What happens to the gap between SARSA and Q-learning on the cliff as ε shrinks toward zero?',
@@ -89,11 +89,11 @@ export const week03Quiz: Question[] = [
     prompt: 'Which statement about Q-learning’s convergence in a finite MDP is right?',
     options: [
       'It always converges with any constant learning rate',
-      'It converges to Q* given GLIE behaviour and step sizes that sum to infinity while their squares do not',
+      'It converges to Q* if every state-action pair keeps being visited and the step sizes sum to infinity while their squares do not',
       'It converges only if the behaviour policy is greedy',
       'It never converges because the target keeps moving',
     ],
     answer: 1,
-    explain: 'Those are the conditions the lecture states. The argument rests on the Bellman backup being a contraction, as in Week 1, plus stochastic approximation for the sampling.',
+    explain: 'Because it is off-policy, Q-learning does not need the behaviour to become greedy; it only needs everything to keep being tried. The argument rests on the Bellman backup being a contraction, as in Week 1, plus stochastic approximation for the sampling.',
   },
 ]

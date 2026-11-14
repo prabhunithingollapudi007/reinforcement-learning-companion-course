@@ -88,13 +88,13 @@ export const week15Quiz: Question[] = [
       'They work only for small models',
     ],
     answer: 1,
-    explain: 'A checker is right about every response, not just those resembling its training data. Not every task has one.',
+    explain: 'A checker does not depend on a response resembling its training data, the way a learned judge does, though it is only as good as what it checks. Not every task has one.',
   },
   {
     prompt: 'In GRPO, where does the baseline for each answer come from?',
     options: [
       'A learned value network',
-      'The average reward of the other answers sampled for the same question',
+      'The average reward of the group of answers sampled for the same question',
       'The reward model',
       'A fixed constant',
     ],

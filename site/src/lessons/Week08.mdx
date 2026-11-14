@@ -67,7 +67,7 @@ The name for the mismatch is **covariate shift**: the states the learned policy 
 <TryThis>
 
 1. With no rounds of correction, the clone leaves the lane in 44 of 200 drives. The expert never does. The clone's steering is only slightly off, but that is enough to carry it past the edge of the shaded band, and outside the band it does nothing.
-2. Drag the first slider to **perfect copy**. Zero failures. A perfect clone never leaves the states the expert visited, so it never needs to know anything else. The whole problem starts from small errors.
+2. Drag the first slider to **perfect copy**. Zero failures. A perfect clone visits the same kinds of states the expert does, so it never needs to know anything else. The whole problem starts from small errors.
 3. Put the error back and add one round of DAgger. Failures drop to zero and the band widens to most of the lane: the expert has now labelled the states the clone drifted into.
 4. Make the copy worse, 0.15. Without corrections it fails in more than half its drives; with one round it is fixed.
 

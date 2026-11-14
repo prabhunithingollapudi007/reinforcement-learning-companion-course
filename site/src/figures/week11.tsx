@@ -75,15 +75,15 @@ export function SampleThenSolve() {
 /** Two ways to grade an exploring agent. */
 export function RegretOrPac() {
   const xs = Array.from({ length: 24 }, (_, i) => 60 + i * 26)
-  const small = [5, 4, 6, 4, 5, 3, 4, 5, 4, 3, 4, 4, 3, 4, 3, 3, 4, 3, 3, 3, 3, 3, 3, 3]
-  const big = [22, 0, 0, 0, 18, 0, 0, 0, 0, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+  const small = [3, 3, 4, 3, 3, 2, 3, 3, 3, 2, 3, 3, 2, 3, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2] // adds up to 61
+  const big = [22, 0, 0, 0, 18, 0, 0, 0, 0, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] // adds up to 60
   const row = (values: number[], base: number, cls: string) =>
     values.map((v, i) => (v > 0 ? <rect key={i} x={xs[i]} y={base - v * 2.6} width={16} height={v * 2.6} rx={3} className={cls} /> : null))
   return (
     <Figure
       height={230}
       label="Two agents over the same number of steps. The first makes a small mistake on almost every step. The second makes three large mistakes early and none afterwards. Their total regret is similar. A PAC guarantee counts only the steps with a mistake larger than a threshold, so it distinguishes them."
-      caption="Regret adds up the size of every mistake, so many small ones and a few large ones can score the same. A PAC guarantee counts the steps on which the agent was worse than near-optimal by more than ε, and promises that count is small. Which you want depends on whether occasional large errors are tolerable."
+      caption="Regret adds up the size of every mistake, so many small ones and a few large ones can score the same. A PAC guarantee counts the steps on which the agent's action was worse than optimal by more than ε, and promises that count is small. Which you want depends on whether occasional large errors are tolerable."
     >
       <text x={20} y={30} className="fig-strong">
         Many small mistakes

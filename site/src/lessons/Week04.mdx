@@ -102,13 +102,13 @@ The lecture shows how much each piece mattered on Atari (scores from Mnih et al.
 | Seaquest | 656 | 275 | 1003 | 823 | 2894 |
 | Space Invaders | 301 | 302 | 373 | 826 | 1089 |
 
-Two things stand out. A deep network on its own was no better than a linear one, and sometimes worse. And replay did most of the work.
+Two things stand out. A deep network on its own was no better than a linear one, and sometimes worse. And on four of the five games, replay did most of the work.
 
 ## Refinements
 
 DQN set off a long line of improvements. Three worth knowing by name:
 
-- **Double DQN** fixes the maximisation bias from Week 3. The online network chooses the next action and the target network values it: $y = r + \gamma\, \hat Q\big(s', \arg\max_{a'} \hat Q(s', a'; w);\, w^-\big)$. It needs no extra network.
+- **Double DQN** reduces the maximisation bias from Week 3. The online network chooses the next action and the target network values it: $y = r + \gamma\, \hat Q\big(s', \arg\max_{a'} \hat Q(s', a'; w);\, w^-\big)$. It needs no extra network.
 - **Prioritised replay** samples transitions with large TD error more often, on the grounds that they have the most to teach.
 - **Dueling networks** split the network's output into a state value and per-action advantages, so the value of a state can be learned without trying every action in it.
 
@@ -136,10 +136,10 @@ Build the pieces of DQN in PyTorch: the replay buffer, ε-greedy action selectio
 
 - A **function approximator** $\hat Q(s, a; w)$ replaces the table. It generalises across states, and for the same reason an update to one state moves others.
 - Each tabular method becomes a gradient step toward its usual target. TD targets contain $w$ but are treated as constants: a **semi-gradient**.
-- The **deadly triad**: function approximation, bootstrapping and off-policy data. Any two are safe; all three can diverge.
+- The **deadly triad**: function approximation, bootstrapping and off-policy data. Drop any one and instability can be avoided (provably so with linear approximation); all three together can diverge.
 - Naive deep Q-learning suffers from **correlated samples** and **non-stationary targets**.
 - **DQN** adds a **replay buffer** (random minibatches of past transitions) and a **target network** (weights $w^-$ refreshed every $C$ steps). On Atari, replay mattered most.
-- **Double DQN** chooses the action with one network and values it with the other, removing the upward bias of the max.
+- **Double DQN** chooses the action with one network and values it with the other, reducing the upward bias of the max.
 - Next: optimise the policy itself.
 
 </Recap>

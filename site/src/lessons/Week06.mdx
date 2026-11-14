@@ -30,7 +30,7 @@ Last week's policy gradient works, wastefully. It throws away each batch of epis
 
 1. At learning rate 1.0 the policy climbs to the top of the ridge, 0.90, within ten steps.
 2. Lower it to 0.1. After 40 steps it has only reached 0.61. Safe, and far too slow.
-3. Raise it to 10. One step carries the policy over the cliff, onto the flat part where the gradient is zero. Performance sits at −1 for good: the new policy collects only bad data, and that data contains no hint of which way is better.
+3. Raise it to 10. The first step overshoots onto the cliff edge, the next throws the policy far back down the slope, and a few steps later it jumps clean over the cliff onto the flat part, where the gradient is zero. Performance then sits at −1 for good: the new policy collects only bad data, and that data contains no hint of which way is better.
 4. Keep the learning rate at 10 and turn on the limit. It reaches 0.90 again. Tighten the limit to 0.02: still safe, slower.
 
 </TryThis>
@@ -81,7 +81,7 @@ In practice the constant $C$ from the theory is so large when $\gamma$ is near 1
 
 Proximal policy optimization keeps the new policy close to the old one in a way that is cheap to compute. It has two variants.
 
-**KL penalty.** Maximise $\mathcal{L}_{\theta_k}(\theta) - \beta_k \bar D_{KL}(\theta \,\|\, \theta_k)$, and adapt $\beta_k$: double it if the policy moved too far this iteration, halve it if it barely moved.
+**KL penalty.** Maximise $\mathcal{L}_{\theta_k}(\theta) - \beta_k \bar D_{KL}(\theta \,\|\, \theta_k)$, where $\bar D_{KL}$ is the average KL divergence from the old policy to the new, and adapt $\beta_k$: double it if the policy moved too far this iteration, halve it if it barely moved.
 
 **Clipped objective.** Let $r_t(\theta) = \pi_\theta(a_t \mid s_t) / \pi_{\theta_k}(a_t \mid s_t)$ be the probability ratio. Maximise
 
@@ -100,7 +100,7 @@ $$
 
 </TryThis>
 
-The `min` makes the objective a pessimistic estimate: it takes the clipped value only when that is the lower one. PPO cannot be tricked into a large move by an optimistic prediction.
+The `min` makes the objective a pessimistic estimate: it takes the clipped value only when that is the lower one. PPO gets no credit for a large move made on the strength of an optimistic prediction.
 
 ## Estimating the advantage
 
@@ -138,7 +138,7 @@ The lecture's summary of why it became the default:
 - It reuses each batch for several gradient steps, so it needs far fewer episodes than plain policy gradient.
 - The clip (or KL penalty) makes large, destructive policy changes unlikely.
 - It is simple to implement on top of any policy gradient code.
-- It converges to a local optimum, not necessarily the best policy.
+- It carries no global guarantee: at best it settles at a local optimum, not necessarily the best policy.
 
 ## What breaks next
 

@@ -178,7 +178,7 @@ $$
 - The error shrinks geometrically: at most $\gamma^k$ times the starting error after $k$ sweeps.
 - A stopping rule: if a sweep changes no value by more than $\epsilon$, the values are within $\epsilon\gamma/(1-\gamma)$ of optimal.
 
-<Derivation title="The Bellman backup is a γ-contraction" why="this one inequality is the reason everything this week converges, and seeing where it relies on an exact maximum and exact expectation explains why adding function approximation in Week 4 can break convergence.">
+<Derivation title="The Bellman backup is a γ-contraction" why="this one inequality is the reason value iteration and policy evaluation converge, and seeing where it relies on an exact maximum and exact expectation explains why adding function approximation in Week 4 can break convergence.">
 
 Fix a state $s$. The difference of two maxima is at most the maximum of the differences, so
 
@@ -256,7 +256,7 @@ Implement the week's algorithms on the same gridworld the playground uses. Your 
 - A fixed policy turns an MDP into a reward process, so **policy evaluation** is just repeated backups.
 - **Policy iteration**: evaluate, then act greedily. Every round is at least as good as the last, and it stops at an optimal policy.
 - **Value iteration**: back up with a max. $V_k$ is the best you can do with $k$ steps left.
-- Both converge because the backup is a **γ-contraction**: error shrinks by at least γ per sweep, from any starting point.
+- Value iteration converges because the backup is a **γ-contraction**: error shrinks by at least a factor γ per sweep, from any starting point. Policy iteration stops because every round improves the policy and there are only finitely many policies.
 - Both need the model and a table. Removing those two assumptions is the rest of the course.
 
 </Recap>

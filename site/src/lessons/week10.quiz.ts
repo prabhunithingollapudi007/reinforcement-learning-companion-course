@@ -96,7 +96,7 @@ export const week10Quiz: Question[] = [
     explain: 'ε-greedy’s line keeps a constant slope while UCB’s flattens, so UCB must overtake it eventually. How long that takes depends on the problem.',
   },
   {
-    prompt: 'What is the best possible growth rate of regret for any bandit algorithm?',
+    prompt: 'On a fixed bandit, what is the best possible long-run growth of regret for an algorithm that works on every bandit?',
     options: ['Constant', 'Logarithmic in the number of steps', 'Square root', 'Linear'],
     answer: 1,
     explain: 'The Lai–Robbins lower bound. The constant in front grows as the arms become harder to tell apart.',

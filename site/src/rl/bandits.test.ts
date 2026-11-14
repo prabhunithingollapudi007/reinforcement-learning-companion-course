@@ -40,6 +40,22 @@ describe('regret of four strategies (numbers quoted in the Week 10 lesson)', () 
   })
 })
 
+describe('when the arms are close together: 0.70, 0.65, 0.60 (numbers quoted in the Week 10 lesson)', () => {
+  const close = (s: Strategy) => averageRegret(s, [0.7, 0.65, 0.6], 5000, 0.1, 50, 5)[4999]
+  it('the two methods with logarithmic regret end up worse than with a gap of 0.2', () => {
+    expect(close('ucb')).toBeCloseTo(118, -1)
+    expect(close('thompson')).toBeCloseTo(36, 0)
+    expect(close('ucb')).toBeGreaterThan(run('ucb')[4999])
+    expect(close('thompson')).toBeGreaterThan(run('thompson')[4999])
+  })
+  it('greedy and epsilon-greedy totals fall, because each wrong pull costs a quarter as much', () => {
+    expect(close('greedy')).toBeCloseTo(186, -1)
+    expect(close('epsilon')).toBeCloseTo(60.5, 0)
+    expect(close('greedy')).toBeLessThan(run('greedy')[4999])
+    expect(close('epsilon')).toBeLessThan(run('epsilon')[4999])
+  })
+})
+
 describe('greedy can lock on to the wrong arm', () => {
   it('in about a third of runs it is still mostly pulling a worse arm at the end', () => {
     expect(stuckShare('greedy', MEANS, 1000, 0, 200, 5)).toBeCloseTo(0.33, 1)

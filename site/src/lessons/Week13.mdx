@@ -77,7 +77,7 @@ Multi-task policies are told what to do. A **meta-RL** agent is put in a new tas
 
 <TryThis>
 
-1. With no practice, the top agent pulls levers at random and averages 2.78 of 10 on new tasks. UCB, a good general-purpose algorithm, averages 2.00: it carefully tries all nine levers once and has one pull left.
+1. With no practice, the top agent chooses at random among its three moves (try a new lever, pull the clue, pull the best lever it knows) and averages 2.78 of 10 on new tasks. UCB, a good general-purpose algorithm, averages 2.00: it carefully tries all nine levers once and has one pull left.
 2. Move practice to 20 tasks. The agent has a half-formed strategy and averages 7.25.
 3. At 100 tasks it has found the trick: pull the clue first, then the lever the clue names, for 9 of 10. All 20 separately trained agents discover this.
 4. Change which lever pays. The practised agent adapts in one pull. It has not memorised an answer; it has learned a *procedure* for finding the answer.
@@ -87,7 +87,7 @@ Multi-task policies are told what to do. A **meta-RL** agent is put in a new tas
 
 <PlainWords>
 
-There are two learners here, one inside the other. The slow one runs across hundreds of tasks and adjusts the agent's strategy. The fast one runs inside a single task and is nothing more than that strategy reacting to what it sees. The paper that introduced the idea put it in its title: fast reinforcement learning via slow reinforcement learning (Duan et al., 2016).
+There are two learners here, one inside the other. The slow one runs across hundreds of tasks and adjusts the agent's strategy. The fast one runs inside a single task and is nothing more than that strategy reacting to what it sees. One of the two papers that introduced the idea put it in its title: fast reinforcement learning via slow reinforcement learning (Duan et al., 2016).
 
 </PlainWords>
 

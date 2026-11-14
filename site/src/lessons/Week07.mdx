@@ -33,7 +33,7 @@ Training the critic is supervised learning: inputs are states, labels are some e
 
 | Label for $\hat V(s_t)$ | Name | Trade-off |
 |---|---|---|
-| $\sum_{t' \ge t} r_{t'}$ | Monte Carlo | unbiased, noisy |
+| $\sum_{t' \ge t} \gamma^{t'-t} r_{t'}$ | Monte Carlo | unbiased, noisy |
 | $r_t + \gamma \hat V(s_{t+1})$ | bootstrapped (TD) | steady, biased by the critic's own errors |
 | $\sum_{t'=t}^{t+n-1} \gamma^{t'-t} r_{t'} + \gamma^n \hat V(s_{t+n})$ | $n$-step | in between; the lecture notes this often works best |
 
@@ -90,7 +90,7 @@ $$
 \nabla_\theta J(\theta) \approx \frac{1}{N} \sum_i \nabla_\theta \log \pi_\theta(\bar a_i \mid s_i)\; \hat Q(s_i, \bar a_i), \qquad s_i \text{ from the buffer},\ \bar a_i \sim \pi_\theta(\cdot \mid s_i)
 $$
 
-Using $\hat Q$ directly, with no baseline subtracted, is noisier per sample. That is acceptable because there is now far more data to average over.
+Using $\hat Q$ directly, with no baseline subtracted, is noisier per sample. That is acceptable because actions from the current policy cost nothing to sample, and the replay buffer supplies far more states to average over.
 
 ## Soft actor-critic
 
@@ -98,7 +98,7 @@ Using $\hat Q$ directly, with no baseline subtracted, is noisier per sample. Tha
 
 - An **entropy bonus**: the policy is rewarded for staying random, weighted by a temperature $\alpha$. This keeps it exploring without an ε.
 - The **reparameterisation trick**: for a Gaussian policy, write the action as $a = \mu_\theta(s) + \sigma_\theta(s)\,\epsilon$ and differentiate $\hat Q$ straight through it, a lower-variance gradient than the score function.
-- Stabilisers from Week 4: a target network for the critic, and usually two critics with the smaller one used in the target, against overestimation.
+- Stabilisers in the spirit of Week 4: a target network for the critic, and usually two critics with the smaller one used in the target, a cousin of Double DQN's remedy for overestimation.
 
 ## Choosing between them
 

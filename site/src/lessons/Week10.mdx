@@ -47,17 +47,17 @@ Regret that grows **linearly** with $t$ means the algorithm keeps making the sam
 2. After 5000 they are about 302, 117, 82 and 18. Greedy and ε-greedy have kept climbing in straight lines. UCB and Thompson sampling have bent over.
 3. UCB was *behind* ε-greedy at 1000 pulls and ahead of it by 3000. A guarantee about growth rate says nothing about who leads early: UCB explores heavily at first and is repaid later.
 4. ε-greedy's slope is easy to predict. A random pull here costs 0.2 on average, and happens 10% of the time: 0.02 per pull, 20 per thousand, forever. Lower ε and the slope falls, but the early mistakes last longer.
-5. Shrink the gap between arms to 0.05. Every curve gets worse: similar-looking arms are what make a bandit hard.
+5. Shrink the gap between arms to 0.05. UCB and Thompson sampling end up worse, about 118 and 36 after 5,000 pulls: similar-looking arms take many more pulls to tell apart. Greedy and ε-greedy totals fall, to about 186 and 60, but only because each wrong pull now costs a quarter as much.
 
 </TryThis>
 
-How well can any algorithm do? A classical lower bound (Lai and Robbins) says total regret must grow at least **logarithmically** in the number of steps, with a constant that is larger when the arms are harder to tell apart. So the target is regret that grows like $\log t$.
+How well can any algorithm do? A classical lower bound (Lai and Robbins) says that for any algorithm that does reasonably on every bandit, total regret must eventually grow at least **logarithmically** in the number of steps, with a constant that is larger when the arms are harder to tell apart. So the target is regret that grows like $\log t$.
 
 ## Optimism in the face of uncertainty
 
 <OptimismPays />
 
-To make this precise, compute for each arm an **upper confidence bound**: a value $U_t(a)$ that the arm's true mean is below with high probability. Then pull the arm with the highest bound. For bounded rewards the bound comes from a concentration inequality, and the resulting algorithm is **UCB1**:
+To make this precise, compute for each arm an **upper confidence bound**: a value $U_t(a)$ that the arm's true mean is below with high probability. Then pull the arm with the highest bound. For rewards in $[0, 1]$ the bound comes from a concentration inequality, and the resulting algorithm is **UCB1**:
 
 $$
 a_t = \arg\max_a \Big[ \hat Q_t(a) + \sqrt{\frac{2 \log t}{N_t(a)}} \Big]
@@ -67,7 +67,7 @@ The first term is the arm's average so far. The second is a bonus that is large 
 
 <Derivation title="Where the bonus comes from" why="the same recipe, a concentration bound turned into a bonus, is how exploration is carried over to full MDPs next week.">
 
-For the average $\hat\mu$ of $n$ independent rewards with mean $\mu$ (bounded, or more generally 1-sub-Gaussian), the lecture quotes the bound
+For the average $\hat\mu$ of $n$ independent rewards with mean $\mu$ (bounded in $[0, 1]$, or more generally 1-sub-Gaussian), the lecture quotes the bound
 
 $$
 P(\hat\mu \le \mu - \varepsilon) \le \exp\!\Big( -\frac{n \varepsilon^2}{2} \Big) .
@@ -138,7 +138,7 @@ Implement the three selection rules and the running-average update, then compare
 - A **bandit** is repeated choice among arms with unknown reward distributions: exploration with nothing else in the way.
 - **Regret** is the reward given up by not always pulling the best arm: $\sum_a \mathbb{E}[N_t(a)]\,\Delta_a$. Linear regret means a mistake repeated forever.
 - **Greedy** can lock on to a bad arm. **ε-greedy** with fixed ε explores forever. Both have linear regret.
-- No algorithm can beat **logarithmic** regret.
+- No algorithm that works on every bandit can beat **logarithmic** regret in the long run.
 - **Optimism**: pull the arm with the highest upper confidence bound. **UCB1** uses $\hat Q(a) + \sqrt{2 \log t / N(a)}$ and achieves logarithmic regret.
 - **Thompson sampling**: keep a belief per arm, sample from each, pull the highest sample. Also logarithmic, and usually very good in practice.
 - Both explore where it could matter and stop where it could not.

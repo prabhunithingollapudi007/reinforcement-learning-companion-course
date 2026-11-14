@@ -33,13 +33,17 @@ function advise(model: Model, demos: Demos, acting: Acting, reward: Reward): Adv
   }
   if (reward === 'none') {
     out.push({ title: 'Make goals the reward: goal-conditioned RL with hindsight relabelling', weeks: [13], why: 'Reaching a state needs no reward design, and relabelling turns every failed attempt into a success at something.' })
-    if (demos === 'no') out.push({ title: 'Or recover a reward from behaviour', weeks: [9], why: 'With no reward and no way to define goals, the remaining source of “what is wanted” is someone showing or choosing.' })
+    out.push(
+      demos === 'yes'
+        ? { title: 'Or recover a reward from the demonstrations', weeks: [9], why: 'Reward learning turns “what someone did or chose” into a reward that RL can then optimise.' }
+        : { title: 'Otherwise, collect demonstrations or comparisons', weeks: [8, 9], why: 'With no reward and no goal to state, the only remaining source of “what is wanted” is someone showing or choosing.' },
+    )
   }
   if (model === 'simulator') {
     out.push({ title: 'Plan or search with the model', weeks: [1, 12], why: 'If you can ask “what happens if”, look ahead before acting: dynamic programming when the problem is small, tree search when it is not.' })
     if (acting !== 'cheap') out.push({ title: 'Train in simulation, then cross the gap', weeks: [16], why: 'Simulated experience is nearly free. Randomise what you are unsure of, and let the policy adapt from its recent history.' })
   }
-  if (acting === 'none') {
+  if (acting === 'none' && reward !== 'none') {
     out.push({ title: 'Offline RL: improve on the data without leaving it', weeks: [9], why: 'With a fixed dataset, any action the data does not cover is a guess. Constrain the policy or be pessimistic about values.' })
   }
   if (acting === 'costly' && reward !== 'none') {

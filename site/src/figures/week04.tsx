@@ -81,8 +81,8 @@ export function TriadTriangle() {
   return (
     <Figure
       height={290}
-      label="A triangle whose corners are function approximation, bootstrapping and off-policy data. Any two together are safe. All three together can make value estimates diverge."
-      caption="Each corner is something we want: generalisation, learning from single steps, and reusing old data. Any two are safe together. Q-learning with a neural network uses all three."
+      label="A triangle whose corners are function approximation, bootstrapping and off-policy data. With any one removed, instability can be avoided. All three together can make value estimates diverge."
+      caption="Each corner is something we want: generalisation, learning from single steps, and reusing old data. Give up any one and learning can be kept stable. Q-learning with a neural network uses all three."
     >
       <path d={`M${top.x},${top.y} L${left.x},${left.y} L${right.x},${right.y} Z`} className="fig-box" />
       <text x={360} y={164} textAnchor="middle" className="fig-strong">

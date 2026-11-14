@@ -82,7 +82,7 @@ export const week09Quiz: Question[] = [
     prompt: 'The old policy only ever acted far from the best action. What can an offline method achieve?',
     options: [
       'It finds the best action anyway by generalising',
-      'At most the best behaviour that appears in the data',
+      'At most the best that can be assembled from the actions that appear in the data',
       'Nothing at all',
       'The same as online RL',
     ],

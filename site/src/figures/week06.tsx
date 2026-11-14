@@ -120,7 +120,7 @@ export function PpoLoop() {
     <Figure
       height={186}
       label="One PPO iteration in four steps: collect data with the current policy, compute advantages with GAE, take several epochs of minibatch gradient steps on the clipped objective, and refit the critic. Then repeat with the new policy."
-      caption="The step that sets PPO apart is the third: it reuses one batch of data for many gradient steps. The clip is what makes that safe."
+      caption="The step that sets PPO apart is the third: it reuses one batch of data for many gradient steps. The clip is what keeps that from going badly wrong."
     >
       {boxes.map((b, i) => (
         <g key={b.title}>

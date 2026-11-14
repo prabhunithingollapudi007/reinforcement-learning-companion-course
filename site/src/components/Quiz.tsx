@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import { optionOrder } from './quizOrder'
 
 export interface Question {
   prompt: string
@@ -9,6 +10,8 @@ export interface Question {
 
 export function Quiz({ questions }: { questions: Question[] }) {
   const [picked, setPicked] = useState<(number | null)[]>(() => questions.map(() => null))
+  // Options are shown in a shuffled order that is fixed per question; `picked` holds the original index.
+  const orders = useMemo(() => questions.map((q) => optionOrder(q.prompt, q.options)), [questions])
   const answered = picked.filter((p) => p !== null).length
   const correct = picked.filter((p, i) => p === questions[i].answer).length
 
@@ -23,7 +26,8 @@ export function Quiz({ questions }: { questions: Question[] }) {
               {q.prompt}
             </legend>
             <div className="quiz-options">
-              {q.options.map((opt, j) => {
+              {orders[i].map((j, slot) => {
+                const opt = q.options[j]
                 const chosen = choice === j
                 const reveal = choice !== null
                 const state = !reveal ? '' : j === q.answer ? 'is-right' : chosen ? 'is-wrong' : 'is-dim'
@@ -36,7 +40,7 @@ export function Quiz({ questions }: { questions: Question[] }) {
                     onClick={() => setPicked((prev) => prev.map((p, k) => (k === i ? j : p)))}
                   >
                     <span className="quiz-mark" aria-hidden="true">
-                      {reveal && j === q.answer ? '✓' : reveal && chosen ? '✕' : String.fromCharCode(65 + j)}
+                      {reveal && j === q.answer ? '✓' : reveal && chosen ? '✕' : String.fromCharCode(65 + slot)}
                     </span>
                     <span>{opt}</span>
                   </button>

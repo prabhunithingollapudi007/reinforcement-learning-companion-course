@@ -66,7 +66,7 @@ export const week11Quiz: Question[] = [
       'The size of the exploration bonus',
     ],
     answer: 1,
-    explain: 'Value error ≤ (ε_R + γ V_max ε_T) / (1 − γ). An accurate model yields an accurate evaluation, up to a factor of the horizon.',
+    explain: 'Value error ≤ (ε_R + γ V_max ε_T) / (1 − γ). An accurate model yields an accurate evaluation, with errors amplified by the horizon (rewards) or the horizon squared (transitions).',
   },
   {
     prompt: 'What does PSRL do at the start of each episode?',

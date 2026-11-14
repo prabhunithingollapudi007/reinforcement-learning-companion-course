@@ -118,7 +118,7 @@ export function GroupOfAnswers() {
     <Figure
       height={240}
       label="One question is answered eight times. A checker marks two answers right and six wrong. Each answer's advantage is its reward minus the group's average, divided by the group's spread: plus 1.73 for the two right answers and minus 0.58 for the six wrong ones. The model is updated to make the right answers' reasoning more likely."
-      caption="Group-relative policy optimisation (GRPO). The baseline that policy gradients need comes from the other answers to the same question, so no value network is required. A question the model always gets right, or always gets wrong, gives every answer an advantage of zero: learning happens on questions at the edge of its ability."
+      caption="Group-relative policy optimisation (GRPO). The baseline that policy gradients need comes from the group of answers sampled for the same question, so no value network is required. A question the model always gets right, or always gets wrong, gives every answer an advantage of zero: learning happens on questions at the edge of its ability."
     >
       <rect x={20} y={78} width={130} height={60} rx={12} className="fig-box" />
       <text x={85} y={104} textAnchor="middle" className="fig-strong">

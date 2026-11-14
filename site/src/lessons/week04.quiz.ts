@@ -27,7 +27,7 @@ export const week04Quiz: Question[] = [
       'Sampling, bootstrapping, Monte Carlo',
     ],
     answer: 1,
-    explain: 'Any two together are safe. Q-learning with a neural network uses all three.',
+    explain: 'Remove any one and the instability can be avoided. Q-learning with a neural network uses all three.',
   },
   {
     prompt: 'In the two-state example, why does switching to a Monte Carlo target stop the divergence?',

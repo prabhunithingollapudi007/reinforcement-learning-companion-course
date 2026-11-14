@@ -121,7 +121,7 @@ Minimising it fits the implied reward to the comparisons, and the policy that im
 
 ## When the reward can be checked: reasoning
 
-Preferences are a soft, hackable signal. Some tasks have a hard one: the proof checks, the code passes its tests, the number is right. With a **verifiable reward** there is no reward model to fool, and optimisation can be pushed much further.
+Preferences are a soft, hackable signal. Some tasks have a hard one: the proof checks, the code passes its tests, the number is right. With a **verifiable reward** there is no learned judge to fool, and optimisation can be pushed much further. A checker is still only as good as what it checks: a thin test suite can be gamed too.
 
 It also changes what is worth learning. A model allowed to write out intermediate steps before answering, a **chain of thought**, can spend more computation on harder questions. That computation happens when the question is asked, not during training: a second dimension along which to scale. The crudest way to spend it is to sample many answers and vote.
 
@@ -144,7 +144,7 @@ A_i = \frac{r_i - \operatorname{mean}(r_1, \dots, r_G)}{\operatorname{std}(r_1, 
 L(\theta) = -\,\mathbb{E} \Big[ \min\big( \rho_i A_i, \; \operatorname{clip}(\rho_i, 1 - \epsilon, 1 + \epsilon) A_i \big) \Big] + \beta\, \mathrm{KL}(\pi_\theta \Vert \pi_{\text{ref}}),
 $$
 
-where $\rho_i = \pi_\theta(y_i \mid x) / \pi_{\text{old}}(y_i \mid x)$, exactly as in Week 6. Nobody tells the model how to reason. Whatever reasoning tends to end in checked-correct answers is reinforced, and in practice responses grow longer as accuracy grows.
+where $\rho_i$ is the probability ratio $\pi_\theta / \pi_{\text{old}}$ as in Week 6. In practice it is taken token by token: every token of response $i$ shares that response's advantage $A_i$, and the loss averages over tokens. Nobody tells the model how to reason. Whatever reasoning tends to end in checked-correct answers is reinforced, and in practice responses grow longer as accuracy grows.
 
 Step back and the pattern is Week 12's. AlphaZero combined learning with search at decision time. Reasoning models combine learning with thinking at answer time. General methods that turn more computation into better results, search and learning, keep winning.
 

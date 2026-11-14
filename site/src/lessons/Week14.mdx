@@ -55,7 +55,7 @@ The same thing goes by many names: subgoals, subtasks, skills, options, high-lev
 <TryThis>
 
 1. Look at the three maps after 500 steps of random wandering. Single moves smear outward from S a neighbourhood at a time; in this run they happened on G at step 258. Subgoals travel a few routes between useful places and found G at step 207. Door skills trace the same corridors over and over and have not found G at all.
-2. Press "Wander again" a few times: single runs vary a lot. Over many runs, the three first find G after 531, 2,737 and 193 steps (medians). The middle agent has skills and does worst, because its skills keep dragging it to doorways and G is not at a doorway.
+2. Press "Wander again" a few times: single runs vary a lot. Over many runs, the first time G is found is after 531 steps with single moves, 2,737 with door skills and 193 with subgoals (medians). The agent with door skills does worst, because its skills keep dragging it to doorways and G is not at a doorway.
 3. The chart: in its first episode the subgoal agent needs 230 steps on average, the flat agent 784, the door-skill agent 4,529.
 4. By episode 10 both agents with skills are within a few steps of the 17-step shortest path (21 and 26). The flat agent still needs 433, because a reward 17 steps away takes many episodes to propagate back one move at a time.
 5. Totals for 60 episodes: 11,669 steps flat, 8,635 with door skills, 1,807 with subgoals.
