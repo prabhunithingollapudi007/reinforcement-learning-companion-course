@@ -1,6 +1,6 @@
 # Licence for the course content
 
-Copyright (c) 2026 Prabhu Nithin
+Copyright (c) 2026 Prabhu Nithin Gollapudi
 
 The **course content** in this repository is licensed under the
 Creative Commons Attribution 4.0 International licence (CC BY 4.0).
@@ -37,7 +37,7 @@ the licence, and say if you changed anything.
 
 Something like this is enough:
 
-> Based on "Reinforcement Learning Companion" by Prabhu Nithin, licensed under
+> Based on "Reinforcement Learning Companion" by Prabhu Nithin Gollapudi, licensed under
 > CC BY 4.0. Changes were made.
 
 with a link to this repository.
