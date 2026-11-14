@@ -269,3 +269,13 @@ span.key-4 {
   background: var(--surface-2);
   border: 1px solid var(--border);
 }
+
+/* Week 14 */
+.room-wall {
+  fill: var(--surface-2);
+}
+.room-landmark {
+  fill: var(--text-primary);
+  stroke: var(--surface-1);
+  stroke-width: 1;
+}

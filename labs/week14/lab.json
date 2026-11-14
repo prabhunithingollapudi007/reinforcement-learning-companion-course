@@ -1,0 +1,12 @@
+{
+  "title": "Learning with skills",
+  "edit": "lab.py",
+  "starter": "starter/lab.py",
+  "readonly": ["rooms.py", "test_lab.py"],
+  "solution": "solution.py",
+  "steps": [
+    { "function": "success_with_retries", "hint": "q = p ** (steps / pieces); return (1 - (1 - q) ** (retries + 1)) ** pieces." },
+    { "function": "follow_skill", "hint": "while cell != target: cell = move(cell, int(first_move[cell])); steps += 1; if cell == goal: return cell, steps, gamma ** (steps - 1), True." },
+    { "function": "smdp_target", "hint": "return reward if done else reward + gamma ** steps * np.max(next_values)." }
+  ]
+}

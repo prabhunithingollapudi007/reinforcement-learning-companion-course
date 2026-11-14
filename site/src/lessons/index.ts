@@ -25,4 +25,5 @@ export const LESSON_MINUTES: Record<number, number> = {
   11: 50,
   12: 60,
   13: 55,
+  14: 50,
 }

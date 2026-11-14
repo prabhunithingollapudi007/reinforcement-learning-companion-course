@@ -1,0 +1,144 @@
+import { BigPicture, Derivation, PlainWords, Recap, TryThis } from '../components/Blocks'
+import { Quiz } from '../components/Quiz'
+import { Ladder, TwoLevels, WhoTrainsWhom } from '../figures/week14'
+import { LabRunner } from '../lab/LabRunner'
+import { FourRooms, LongTasks } from '../playgrounds/week14/Rooms'
+import { week14Quiz } from './week14.quiz'
+
+<BigPicture>
+
+Cooking a meal, driving across a state, fixing a bug in a large codebase: these are long. Thousands of low-level decisions, one outcome at the end, and many chances to slip or get stuck on the way. The idea this week is old and simple. Do not learn the long task directly. Learn a **high level** that picks the next subgoal, and a **low level** that knows how to reach a subgoal. The hard part is in the details: what a subgoal is, who trains whom, and when to move on.
+
+</BigPicture>
+
+<Ladder />
+
+## Why long tasks are hard
+
+Three things grow with the length of a task: the number of states visited, the number of chances to make a mistake, and the number of ways to get stuck. The second one is easy to put numbers on.
+
+<LongTasks />
+
+<TryThis>
+
+1. With each step 99% reliable, a 200-step task succeeds 13% of the time in one unbroken attempt. Slide the task to 1,000 steps: under 0.1%.
+2. The blue line cuts the task into 20-step pieces and allows 2 retries of each: 94% at 200 steps, 74% at 1,000.
+3. Set retries to 0. The lines coincide. Cutting a task into pieces does nothing by itself. What helps is that someone is watching at the level of pieces and can ask for one again.
+4. Raise reliability to 99.9% with no retries, then compare with 99% and 2 retries. Being able to recover is worth more than being ten times more careful.
+
+</TryThis>
+
+## Two levels
+
+<TwoLevels />
+
+Running a two-level policy:
+
+1. Observe $o_t$.
+2. The high level picks a subgoal $g \sim \pi^{HL}(\cdot \mid o_t, \text{task})$.
+3. Until it is time for a new subgoal: the low level acts, $a_t \sim \pi^{LL}(\cdot \mid o_t, g)$; observe $o_{t+1}$.
+4. Go to 2.
+
+The same thing goes by many names: subgoals, subtasks, skills, options, high-level actions. There can be more than two levels. What hierarchy offers:
+
+| Benefit | Why |
+| --- | --- |
+| Supervision on *how* | Subgoals are labels for the intermediate steps, not just the final outcome |
+| Sharing | "Pick up the knife" is the same skill in a hundred different recipes |
+| Structured exploration | Trying random subgoals covers far more ground than trying random muscle twitches |
+| Speed | The large, slow high-level model runs a few times a second; the small low level runs at control rate |
+
+## Does it help? It depends on the skills
+
+<FourRooms />
+
+<TryThis>
+
+1. Look at the three maps after 500 steps of random wandering. Single moves smear outward from S a neighbourhood at a time; in this run they happened on G at step 258. Subgoals travel a few routes between useful places and found G at step 207. Door skills trace the same corridors over and over and have not found G at all.
+2. Press "Wander again" a few times: single runs vary a lot. Over many runs, the three first find G after 531, 2,737 and 193 steps (medians). The middle agent has skills and does worst, because its skills keep dragging it to doorways and G is not at a doorway.
+3. The chart: in its first episode the subgoal agent needs 230 steps on average, the flat agent 784, the door-skill agent 4,529.
+4. By episode 10 both agents with skills are within a few steps of the 17-step shortest path (21 and 26). The flat agent still needs 433, because a reward 17 steps away takes many episodes to propagate back one move at a time.
+5. Totals for 60 episodes: 11,669 steps flat, 8,635 with door skills, 1,807 with subgoals.
+
+</TryThis>
+
+<PlainWords>
+
+Skills change the unit of decision. With good ones, a long task becomes a short one: three subgoals from S to G in place of seventeen moves, so there is less to explore and less distance for reward to travel back. With badly chosen ones, the agent is fast at getting to places it does not need to be. The subgoal agent here was handed a competent low level and a sensible list of places. In practice, getting those is most of the work.
+
+</PlainWords>
+
+<Derivation title="Learning over skills: the SMDP update" why="it is the one formula needed to do Q-learning when choices take different amounts of time, and the lab uses it.">
+
+When a choice $o$ made in state $s$ runs for $k$ steps, collecting rewards $r_1, \dots, r_k$ and ending in $s'$, treat it as one long step. Its reward is the discounted sum inside the skill, and the future is discounted by the time that passed:
+
+$$
+Q(s, o) \leftarrow Q(s, o) + \alpha \Big[ \underbrace{\textstyle\sum_{i=1}^{k} \gamma^{\,i-1} r_i}_{\text{reward inside the skill}} + \gamma^{\,k} \max_{o'} Q(s', o') - Q(s, o) \Big].
+$$
+
+With $k = 1$ this is ordinary Q-learning. A decision process whose steps have variable duration is called a semi-Markov decision process (SMDP). In the classic **options** framework a skill is a triple: where it may start, the policy it follows, and when it stops.
+
+</Derivation>
+
+## Three design choices
+
+### What is a subgoal?
+
+| Form | Example | Good when |
+| --- | --- | --- |
+| Language | "put the cup in the sink" | Tasks are semantic; people can label, correct and read it; a language model can be the high level |
+| An image of the result | a picture of the cup in the sink | Details are hard to say in words; unlabelled video can train the high level |
+| A state | target position of gripper and object | The state is known and low-dimensional; goal-reaching RL applies directly |
+
+A good subgoal language is **expressive** (it can ask for every behaviour needed), **structured** (similar behaviours get similar subgoals) and at the **right level** (neither level is left with a job that is too hard).
+
+### Who trains whom?
+
+<WhoTrainsWhom />
+
+It is tempting to skip the question: make the subgoal a learned vector and train everything end to end on the final task. Nothing then forces the vector to mean anything, and the result is a flat policy with an odd shape. The benefits of hierarchy come from the extra supervision or structure put on $g$.
+
+### When to move on?
+
+| | Switch when the subgoal is done | Switch every $n$ steps |
+| --- | --- | --- |
+| Appeal | The right thing in principle | Simple |
+| Needs | A reliable "done" detector, and a way to redo past subgoals | A choice of $n$ |
+| Failure | A wrong "not done yet" leaves the agent stuck for good | A wrong subgoal costs at most $n$ steps |
+
+The second is more forgiving, and frequent replanning by the high level is the common choice.
+
+## How current systems do it
+
+- **Imitation with language subgoals.** Demonstrations are cut into segments, each labelled with a short instruction. The high level is trained to predict the next instruction from the image; the low level is a language-conditioned policy from Week 8. A person can then correct the robot in words while it works, and those corrections are DAgger data for the high level alone, with the low level frozen.
+- **Imitation with image subgoals.** The high level is an image-editing model that draws what the scene should look like a moment from now. It can be trained on videos of people, with no actions and no labels.
+- **Hierarchical RL with state subgoals.** The low level is last week's goal-conditioned policy with a goal-reaching reward. The high level's actions are goal states, trained off-policy on the task reward, with hindsight relabelling of the high-level actions to match what the low level really did.
+- **Skill discovery.** With no reward at all, learn a set of skills that are as distinguishable from one another as possible, to be used later.
+
+And the alternative: one flat policy that writes down its subgoal as intermediate "reasoning" before each action. It gets the same supervision without two models, at the price of running the large model at every step. Which is better is not settled.
+
+## What breaks next
+
+A high level that reads an image and writes an instruction is a language model. Next week turns to language models themselves as RL agents: how preferences, rewards and policy gradients are used to train them.
+
+## Python lab
+
+Implement skill execution and the SMDP update, and reproduce the four-rooms comparison.
+
+<LabRunner week="week14" />
+
+## Quiz
+
+<Quiz questions={week14Quiz} />
+
+<Recap>
+
+- Long tasks are hard because states, chances for error and ways to get stuck all grow with length. At 99% per step, 200 steps succeed 13% of the time.
+- **Hierarchy**: a high-level policy chooses subgoals; a low-level policy reaches them. The high level runs less often.
+- It helps through **extra supervision**, **sharing** of skills, **structured exploration**, and running a big model slowly beside a small one quickly.
+- It helps only with **suitable skills**: in four rooms, subgoals cut total learning steps from 11,669 to 1,807, while door-seeking skills made the first episode six times longer.
+- Learning over skills uses the **SMDP update**: reward inside the skill, plus $\gamma^k$ times the value where it ended.
+- Design choices: the **form of the subgoal** (language, image, state), **how each level is trained** (separately, then adapted to each other), and **when to switch** (on completion, or every $n$ steps, which is more forgiving).
+- A latent subgoal trained end to end is just a flat policy.
+
+</Recap>
