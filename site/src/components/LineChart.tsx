@@ -1,12 +1,12 @@
 import { useState, type ReactNode } from 'react'
 
-// A small line chart for playgrounds: up to three series, hover read-out,
+// A small line chart for playgrounds: up to four series, hover read-out,
 // legend and a table view. Colours are the validated series slots.
 
 export interface Series {
   name: string
   values: number[] // y at x = 0, 1, 2, ...
-  slot: 1 | 2 | 3
+  slot: 1 | 2 | 3 | 4
   dots?: boolean
 }
 

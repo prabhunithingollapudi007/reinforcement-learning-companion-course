@@ -187,3 +187,29 @@
 .dot-2 {
   fill: var(--series-2);
 }
+
+/* A fourth series colour, for line charts only (the palette's fourth slot). */
+:root {
+  --series-4: #eda100;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme='light'])) {
+    --series-4: #c98500;
+  }
+}
+:root[data-theme='dark'] {
+  --series-4: #c98500;
+}
+.series-4 {
+  stroke: var(--series-4);
+}
+.dot-4,
+.key-4 {
+  fill: var(--series-4);
+}
+span.key-4 {
+  background: var(--series-4);
+}
+.bar-4 {
+  fill: var(--series-4);
+}

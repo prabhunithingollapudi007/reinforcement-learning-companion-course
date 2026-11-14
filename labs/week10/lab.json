@@ -1,0 +1,13 @@
+{
+  "title": "Three ways to choose an arm",
+  "edit": "lab.py",
+  "starter": "starter/lab.py",
+  "readonly": ["bandit.py", "test_lab.py"],
+  "solution": "solution.py",
+  "steps": [
+    { "function": "updated_average", "hint": "old + (reward - old) / (count + 1)." },
+    { "function": "epsilon_greedy_arm", "hint": "Random with probability epsilon, otherwise np.argmax." },
+    { "function": "ucb_scores", "hint": "estimates + np.sqrt(2 * np.log(t) / counts)." },
+    { "function": "thompson_arm", "hint": "np.argmax(rng.beta(1 + wins, 1 + losses))." }
+  ]
+}

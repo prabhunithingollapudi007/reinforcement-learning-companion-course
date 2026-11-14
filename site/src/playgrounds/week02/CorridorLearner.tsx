@@ -69,7 +69,7 @@ export function CorridorLearner() {
       caption={
         <>
           A rover starts in the middle and moves left or right by coin flip. Leaving at the left end pays +1, at the
-          right end +10. Both methods see exactly the same episodes. The dark ticks are the true values, which
+          right end +10. Both methods see exactly the same episodes. The short ticks are the true values, which
           neither method is told.
         </>
       }

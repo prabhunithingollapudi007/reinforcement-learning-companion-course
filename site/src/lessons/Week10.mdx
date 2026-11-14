@@ -1,0 +1,146 @@
+import { BigPicture, Derivation, PlainWords, Recap, Refresher, TryThis } from '../components/Blocks'
+import { Quiz } from '../components/Quiz'
+import { OptimismPays, ThreeArms } from '../figures/week10'
+import { LabRunner } from '../lab/LabRunner'
+import { ArmExplorer, RegretRace } from '../playgrounds/week10/Bandits'
+import { week10Quiz } from './week10.quiz'
+
+<BigPicture>
+
+Week 1 named four ingredients of RL. Three have had weeks of attention: optimization, delayed consequences, generalization. The fourth, **exploration**, has been handled with "act randomly some of the time". This part asks how to do it properly: how should an agent choose what to try, so that it learns what it needs while giving up as little reward as possible? The cleanest place to answer that is a problem with no states at all.
+
+</BigPicture>
+
+<ThreeArms />
+
+<Refresher title="Bayes' rule with a Beta prior">
+
+For a coin with unknown bias θ, a **Beta(α, β)** distribution is a convenient belief about θ: its mean is α/(α+β), and it narrows as α+β grows. It is *conjugate* to yes/no data: after seeing a success the belief becomes Beta(α+1, β), after a failure Beta(α, β+1). Beta(1, 1) is the uniform "know nothing" starting point.
+
+</Refresher>
+
+## Bandits and regret
+
+A **multi-armed bandit** is a set of actions (arms), each with its own unknown reward distribution. At each step the agent picks an arm and sees a reward drawn from it. The lecture's running example is choosing a treatment for each new patient, with success or failure as the reward.
+
+How should an algorithm for this be judged? Convergence is too weak: it says nothing about the damage done along the way. The standard measure is **regret**. If $Q(a)$ is the mean reward of arm $a$ and $V^* = \max_a Q(a)$,
+
+$$
+\text{total regret after } t \text{ steps} = \mathbb{E} \Big[ \sum_{\tau=1}^{t} \big( V^* - Q(a_\tau) \big) \Big] = \sum_a \mathbb{E}[N_t(a)]\, \Delta_a ,
+$$
+
+where $N_t(a)$ counts pulls of arm $a$ and $\Delta_a = V^* - Q(a)$ is its **gap**. A good algorithm pulls large-gap arms rarely. The difficulty is that the gaps are exactly what it does not know.
+
+Regret that grows **linearly** with $t$ means the algorithm keeps making the same mistake at a constant rate forever. The goal is **sublinear** regret.
+
+## Two strategies that fail
+
+**Greedy**: try each arm once, then always pull the one with the best average. If the best arm happens to pay nothing on its first try, greedy may never touch it again. It can lock on to a worse arm for good: linear regret.
+
+**ε-greedy** with a fixed ε never locks on, but it pulls a random arm a fraction ε of the time *forever*, including long after it knows which arms are bad. Also linear regret, with a gentler slope.
+
+<RegretRace />
+
+<TryThis>
+
+1. After 1000 pulls the totals are about 62 for greedy, 36 for ε-greedy, 44 for UCB and 13 for Thompson sampling.
+2. After 5000 they are about 302, 117, 82 and 18. Greedy and ε-greedy have kept climbing in straight lines. UCB and Thompson sampling have bent over.
+3. UCB was *behind* ε-greedy at 1000 pulls and ahead of it by 3000. A guarantee about growth rate says nothing about who leads early: UCB explores heavily at first and is repaid later.
+4. ε-greedy's slope is easy to predict. A random pull here costs 0.2 on average, and happens 10% of the time: 0.02 per pull, 20 per thousand, forever. Lower ε and the slope falls, but the early mistakes last longer.
+5. Shrink the gap between arms to 0.05. Every curve gets worse: similar-looking arms are what make a bandit hard.
+
+</TryThis>
+
+How well can any algorithm do? A classical lower bound (Lai and Robbins) says total regret must grow at least **logarithmically** in the number of steps, with a constant that is larger when the arms are harder to tell apart. So the target is regret that grows like $\log t$.
+
+## Optimism in the face of uncertainty
+
+<OptimismPays />
+
+To make this precise, compute for each arm an **upper confidence bound**: a value $U_t(a)$ that the arm's true mean is below with high probability. Then pull the arm with the highest bound. For bounded rewards the bound comes from a concentration inequality, and the resulting algorithm is **UCB1**:
+
+$$
+a_t = \arg\max_a \Big[ \hat Q_t(a) + \sqrt{\frac{2 \log t}{N_t(a)}} \Big]
+$$
+
+The first term is the arm's average so far. The second is a bonus that is large for arms that have rarely been tried and shrinks as they are pulled. UCB1's regret grows like $\log t$, matching the lower bound up to constants.
+
+<Derivation title="Where the bonus comes from" why="the same recipe, a concentration bound turned into a bonus, is how exploration is carried over to full MDPs next week.">
+
+For the average $\hat\mu$ of $n$ independent rewards with mean $\mu$ (bounded, or more generally 1-sub-Gaussian), the lecture quotes the bound
+
+$$
+P(\hat\mu \le \mu - \varepsilon) \le \exp\!\Big( -\frac{n \varepsilon^2}{2} \Big) .
+$$
+
+Set the right-hand side equal to a small failure probability $\delta$ and solve for $\varepsilon$: with probability at least $1 - \delta$,
+
+$$
+\mu \le \hat\mu + \sqrt{\frac{2 \log(1/\delta)}{n}} .
+$$
+
+That square root is the bonus. Letting $\delta$ shrink as $1/t$ makes the bound hold ever more reliably as time goes on, and turns $\log(1/\delta)$ into $\log t$.
+
+</Derivation>
+
+## Thompson sampling
+
+A second approach is Bayesian. Keep a **belief** about each arm's payout rate, here a Beta distribution updated after every pull. Then, at each step:
+
+1. Draw one sample from each arm's belief.
+2. Pull the arm whose sample is highest.
+3. Update that arm's belief with the result.
+
+An arm is pulled in proportion to the probability that it is the best, given what has been seen: **probability matching**. Uncertain arms get tried because their samples are sometimes high; arms known to be bad stop being tried because their samples almost never are.
+
+<ArmExplorer />
+
+<TryThis>
+
+1. With **UCB** selected, press **Pull once** repeatedly. After the first three pulls, the arm chosen is always the one whose whisker reaches highest, which is often not the one with the tallest bar.
+2. Press **Pull 20** a few times. The worst arm's whisker comes down as it is pulled, until its bound is below the others and it is left alone. It still gets an occasional pull, because the bound creeps up with $\log t$.
+3. Switch to **Thompson sampling** and pull once at a time. The three curves start flat. The dots are the draws; the large one is the winner. Early on any arm can win.
+4. Pull 20 a few times. The best arm's curve becomes tall and narrow, because it is being pulled most. The worst arm's curve stays wide, but so far to the left that its draws almost never win. Thompson sampling stops paying for certainty about arms it no longer needs.
+
+</TryThis>
+
+<PlainWords>
+
+Both methods explore only where it could matter. ε-greedy tries a bad arm as often on step ten thousand as on step ten. UCB and Thompson sampling try an arm when there is still a real chance it is the best, and stop when there is not.
+
+</PlainWords>
+
+| | Greedy | ε-greedy | UCB | Thompson sampling |
+|---|---|---|---|---|
+| Explores | never | at random, at a fixed rate | arms with high upper bounds | arms that might be best |
+| Uses uncertainty | no | no | yes, as a bonus | yes, as a belief |
+| Regret | linear | linear | logarithmic | logarithmic |
+| Needs | nothing | a choice of ε | bounded rewards | a prior |
+
+Thompson sampling's strong showing above is typical in practice. It also extends naturally: add a context (who is this user?) and it becomes the workhorse of recommendation and experimentation systems.
+
+## What breaks next
+
+A bandit has no state, so an action's consequences end with its reward. In an MDP, exploring means getting to unfamiliar *states*, which can take a long sequence of deliberate actions. Next week carries optimism and posterior sampling over to that setting.
+
+## Python lab
+
+Implement the three selection rules and the running-average update, then compare their regret on the bandit from the playground.
+
+<LabRunner week="week10" />
+
+## Quiz
+
+<Quiz questions={week10Quiz} />
+
+<Recap>
+
+- A **bandit** is repeated choice among arms with unknown reward distributions: exploration with nothing else in the way.
+- **Regret** is the reward given up by not always pulling the best arm: $\sum_a \mathbb{E}[N_t(a)]\,\Delta_a$. Linear regret means a mistake repeated forever.
+- **Greedy** can lock on to a bad arm. **ε-greedy** with fixed ε explores forever. Both have linear regret.
+- No algorithm can beat **logarithmic** regret.
+- **Optimism**: pull the arm with the highest upper confidence bound. **UCB1** uses $\hat Q(a) + \sqrt{2 \log t / N(a)}$ and achieves logarithmic regret.
+- **Thompson sampling**: keep a belief per arm, sample from each, pull the highest sample. Also logarithmic, and usually very good in practice.
+- Both explore where it could matter and stop where it could not.
+
+</Recap>
