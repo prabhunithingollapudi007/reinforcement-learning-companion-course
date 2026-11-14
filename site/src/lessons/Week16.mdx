@@ -1,0 +1,166 @@
+import { BigPicture, Derivation, PlainWords, Recap, TryThis } from '../components/Blocks'
+import { Quiz } from '../components/Quiz'
+import { SimToRealLoop, SmallBesideLarge, TeacherStudent } from '../figures/week16'
+import { LabRunner } from '../lab/LabRunner'
+import { WhichTool } from '../playgrounds/week16/Chooser'
+import { FromSimToReal, KeepWhatWorked } from '../playgrounds/week16/Robots'
+import { week16Quiz } from './week16.quiz'
+
+<BigPicture>
+
+A robot is where every difficulty in this course arrives together. Experience is slow and wears out hardware. Mistakes break things. A task is useful only if it works nearly every time. So robot learning leans on two sources of cheap experience: a **simulator**, where a policy can practise for years in an afternoon, and a large **pretrained policy**, which already does most things passably. Each leaves a gap that reinforcement learning has to close. The week ends by putting the whole course on one page.
+
+</BigPicture>
+
+## Learning in simulation
+
+<SimToRealLoop />
+
+The simulator is wrong in two ways. Some errors are **parametric**: the right equations with the wrong numbers, such as mass, friction or motor strength. Others are **non-parametric**: effects the simulator does not model at all, such as air flow around a drone, a cable dragging, or a soft object deforming.
+
+<FromSimToReal />
+
+<TryThis>
+
+1. The simulator assumed friction 0.40 and the real floor is 0.30. The policy tuned for 0.40 sends the puck 33 cm past the line. It was perfect in simulation.
+2. The policy tuned across 0.20 to 0.60 is 9 cm long. The one that nudges first is 5 cm short, and that 5 cm is entirely its measurement error.
+3. Move the real floor to 0.60. Now the range-tuned policy (46 cm short) is *worse* than the single-simulator one (33 cm short). One launch speed cannot suit every floor, so it settled on a cautious speed that avoids big overshoots on slippery floors and pays for it on sticky ones.
+4. Sweep the real floor from 0.20 to 0.80 and watch the blue line stay flat. Adapting is the only one of the three that is right everywhere.
+5. Widen the randomisation to ±0.30. The compromise gets more cautious still: 46 cm short even at 0.40, the floor it was centred on.
+6. Raise the measurement error to 20%. The adaptive policy degrades gracefully, by about as much as it mismeasures.
+
+</TryThis>
+
+<PlainWords>
+
+A policy trained in one simulator has learned that simulator. Randomising the simulator teaches it to cope with a family of worlds using one behaviour, which works when one behaviour can cope and becomes timid when it cannot. The step beyond is a policy that looks at how the world has been responding and adjusts, which is the meta-RL idea of Week 13 applied to physics.
+
+</PlainWords>
+
+A caution about the playground: its policy is a single number with no feedback, which makes randomisation look weaker than it is. Real policies react to what they sense at every step, and that alone absorbs a great deal of mismatch. The trade-off is real all the same.
+
+### Three ways across the gap
+
+| | Idea | In control terms | Weakness |
+| --- | --- | --- | --- |
+| **Domain randomisation** | Train one policy across many simulators with different physics, sensing and delays | Robust control | Too wide a range gives a cautious policy |
+| **Learning to adapt** | Let the policy infer the hidden physics from its recent history | Adaptive control | Needs the two-stage training below |
+| **Real-to-sim** | Use real measurements to fix the simulator: identify its parameters, or learn a correction for what it gets wrong | System identification | Needs real data, and only fixes what was measured |
+
+They combine, and most systems use all three.
+
+<TeacherStudent />
+
+The student's training is imitation learning from Week 8 with a perfect, always-available expert, so DAgger works without a human in the loop. A one-stage variant is the **asymmetric actor-critic**: the actor sees only what the real robot will sense, while the critic, needed only during training, is given the privileged information.
+
+For tasks where even writing a reward is hard, such as whole-body humanoid motion, a common recipe borrows the task from people: record a human motion, **retarget** it to the robot's body, and train a policy in simulation to track it. Simulation supplies the physics that the human recording lacks.
+
+## Improving a pretrained robot policy
+
+The second source of cheap experience is other people's data. A **vision-language-action model** starts from a pretrained vision-language model and is trained by imitation on a large pool of robot demonstrations. It takes images and an instruction and outputs actions, usually through a diffusion or flow head that produces a short chunk of actions at once.
+
+Like the language models of Week 15, it is good and not good enough. Imitation tends to level off around 80% success, and autonomy needs 99% or better.
+
+<KeepWhatWorked />
+
+<TryThis>
+
+1. The pretrained policy succeeds 80.7% of the time. If a job has five such stages in a row, that is 34% end to end.
+2. Step the rounds forward. Imitating every success creeps up: 85.7% after one round, 94.3% after eight (74% for five stages).
+3. Imitating only better-than-average attempts reaches 91.4% after one round and 98.8% after two (94% for five stages).
+4. Look at the bars to see why. A success with the 85% grasp is still a success, so the orange rule keeps rewarding it. The blue rule asks a sharper question: was this choice better than what the policy usually does?
+5. Drop to 20 attempts per round. The blue rule now has to judge each way of grasping from a handful of tries, and sometimes throws away the best one by bad luck: on average it now levels off at 98.5%, short of the 99% ceiling. A value estimate is only as good as its data.
+
+</TryThis>
+
+<Derivation title="Why imitating your own successes is policy improvement" why="it shows the simplest RL fine-tuning recipe is sound, and why it is slow.">
+
+Let the policy choose option $a$ with probability $p(a)$, and let $q(a)$ be that option's success rate. Its success rate is $J(p) = \sum_a p(a) q(a)$. Among successful attempts, option $a$ appears with probability
+
+$$
+p'(a) = \frac{p(a)\, q(a)}{\sum_b p(b)\, q(b)} = \frac{p(a)\, q(a)}{J(p)} .
+$$
+
+Fitting the policy to the successes gives $p'$, whose success rate is
+
+$$
+J(p') = \frac{\sum_a p(a)\, q(a)^2}{J(p)} = \frac{\mathbb{E}_p[q^2]}{\mathbb{E}_p[q]} \;\ge\; \mathbb{E}_p[q] = J(p),
+$$
+
+because $\mathbb{E}[q^2] \ge \mathbb{E}[q]^2$. The improvement is $\operatorname{Var}_p(q) / J(p)$: large when the options differ a lot, tiny when the remaining options are 99% and 85%. Weighting by success is a gentle push. Weighting by advantage, $q(a) - J(p)$, pushes harder, at the price of having to estimate it.
+
+</Derivation>
+
+At scale, the blue rule is a recipe built entirely from supervised learning, which is why it suits very large models:
+
+1. **Collect** a large batch of the robot's own attempts, including moments where a person stepped in.
+2. **Fit a value function** by regression, for example predicting how many steps remain until the task is done.
+3. **Label each action** as better or worse than expected, using the value function's estimate of advantage.
+4. **Retrain the policy** on all the data with that label as an extra input, then ask it at run time for the "better" behaviour.
+5. Repeat.
+
+This is offline RL, iterated: Week 9's methods, with new data between rounds. It is forgiving, since a bad hyperparameter means retraining on stored data, not re-running robots.
+
+<SmallBesideLarge />
+
+Learning online, step by step on the robot, is more data-efficient in principle and harder in practice: the model is huge, it has no critic, and its diffusion head and action chunks do not fit standard algorithms. Training a small policy beside the frozen large one avoids all three problems, and an off-policy actor-critic from Week 7 can then learn in tens of episodes.
+
+## The course on one page
+
+Every method in these sixteen weeks answers four questions about a problem: is there a model, are there demonstrations, can the agent gather its own data, and where does the reward come from.
+
+<WhichTool />
+
+| Family | Learns | Data it can use | Weeks |
+| --- | --- | --- | --- |
+| Dynamic programming, tree search | Values, by looking ahead | A model | 1, 12 |
+| Q-learning, DQN | $Q^*$ | Any experience, replayed | 3, 4 |
+| Policy gradient, PPO | The policy directly | Fresh experience from the current policy | 5, 6 |
+| Actor-critic (SAC and relatives) | Policy and $Q^\pi$ | Any experience, replayed | 7 |
+| Behaviour cloning, DAgger | The policy, from an expert | Demonstrations | 8 |
+| Offline RL | Policy and values, cautiously | A fixed dataset | 9 |
+| Model-based RL | A model, then any of the above | Real experience, multiplied | 12 |
+
+And a short list of ideas that kept coming back under different names:
+
+- **Bootstrapping**: learn a guess from a guess (TD, Q-learning, critics).
+- **Stay close**: to the last policy (TRPO, PPO), to the data (offline RL), to the reference model (RLHF), to real states (model rollouts).
+- **Optimism where you are ignorant, pessimism where you cannot check**: exploration bonuses when you can try things, conservative values when you cannot.
+- **Relabel and reuse**: replay buffers, importance weights, hindsight goals.
+- **Search and learning**: spend computation both before acting and while acting (AlphaZero, MPC, reasoning models).
+
+## What is still open
+
+- **Rewards that cannot be checked.** Most things worth doing have no verifier. Learned rewards are exploitable, and we lack a general remedy.
+- **Using prior knowledge.** How best to combine web-scale pretraining with an agent's own experience is unsettled, for language models and robots alike.
+- **World models.** Learned simulators good enough to train in would change the economics of robot learning. They are improving quickly and are not there yet.
+- **Scale.** Value-based and off-policy methods are the most data-efficient and the least stable at large scale.
+- **Evaluation.** A policy that works 95% of the time and one that works 99% look the same until you run hundreds of real trials.
+
+## Where to go from here
+
+- Do the two courses' own assignments, available from their course pages (every lesson's Sources box links there). They are the closest thing to supervised practice.
+- Read Sutton and Barto, *Reinforcement Learning: An Introduction*, for depth on Parts 1 and 5, and Levine's CS 285 lectures for another angle on Parts 2 to 6.
+- Reimplement one algorithm from memory on a new environment. PPO or SAC on a continuous-control task is the standard rite of passage.
+
+## Python lab
+
+Tune a policy in a simulator with the wrong friction, make it robust, make it adaptive, and then improve a pretrained policy from its own attempts.
+
+<LabRunner week="week16" />
+
+## Quiz
+
+<Quiz questions={week16Quiz} />
+
+<Recap>
+
+- Robots make data expensive and reliability essential. Cheap experience comes from **simulation** and from **pretrained policies**; RL closes the gap each leaves.
+- The **reality gap** has parametric parts (wrong numbers) and non-parametric parts (missing physics).
+- **Domain randomisation** trains one robust policy over many simulators; too wide a range makes it cautious. **Learning to adapt** infers the hidden physics from recent history, usually by a privileged **teacher** and an imitating **student**. **Real-to-sim** fixes the simulator from real data.
+- Imitation-trained robot policies level off around 80%. A task of five 80% stages succeeds a third of the time; five 99% stages, 95%.
+- **Imitating your own successes** always improves the policy, by $\operatorname{Var}(q)/J$, which is slow near the top. **Advantage-conditioned** retraining with a fitted value function is sharper and remains supervised learning: iterated offline RL.
+- For online improvement, train a **small policy beside the frozen large one**.
+- The whole course is four questions: model, demonstrations, interaction, reward.
+
+</Recap>

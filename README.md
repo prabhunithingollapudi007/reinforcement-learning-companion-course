@@ -45,8 +45,27 @@ only that lab's tests or lab file.
 
 ## Status
 
-Weeks 1-15 are written: MDPs and planning, Monte Carlo and TD, SARSA and Q-learning,
-function approximation with DQN, policy gradients, PPO, actor-critic methods, imitation learning, offline RL with reward learning, bandits, exploration in MDPs, tree search with model-based RL, multi-task, goal-conditioned and meta-RL, hierarchy, and RL for language models. Week 16 shows its planned outline.
+All 16 weeks are written, each with figures, interactive playgrounds, a quiz and a
+Python lab that runs in the page:
+
+1. MDPs and planning
+2. Monte Carlo and TD
+3. SARSA and Q-learning
+4. Function approximation and DQN
+5. Policy gradients
+6. Trust regions, GAE and PPO
+7. Actor-critic methods
+8. Imitation learning
+9. Offline RL and reward learning
+10. Bandits
+11. Exploration in MDPs
+12. Tree search and model-based RL
+13. Multi-task, goal-conditioned and meta-RL
+14. Hierarchy
+15. RL for language models
+16. RL for robots, and the frontier
+
+Labs for Weeks 4-9 and 15 use PyTorch; the rest use NumPy only.
 
 ## Adding a week
 

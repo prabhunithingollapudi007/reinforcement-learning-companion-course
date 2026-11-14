@@ -1,0 +1,15 @@
+{
+  "title": "Crossing the gap, and improving a pretrained policy",
+  "edit": "lab.py",
+  "starter": "starter/lab.py",
+  "readonly": ["world.py", "test_lab.py"],
+  "solution": "solution.py",
+  "steps": [
+    { "function": "slide_distance", "hint": "return speed ** 2 / (2 * friction * G)." },
+    { "function": "speed_for", "hint": "return float(np.sqrt(2 * friction * G * TARGET))." },
+    { "function": "robust_speed", "hint": "s = TARGET * np.mean(1 / f) / np.mean(1 / f ** 2); return float(np.sqrt(2 * G * s))." },
+    { "function": "estimate_friction", "hint": "return nudge_speed ** 2 / (2 * G * measured_distance)." },
+    { "function": "imitate_successes", "hint": "w = shares * success; return w / w.sum()." },
+    { "function": "imitate_better_than_average", "hint": "w = np.where(success > shares @ success + 1e-12, shares, 0); return shares if w.sum() == 0 else w / w.sum()." }
+  ]
+}

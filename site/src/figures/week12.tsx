@@ -6,7 +6,7 @@ interface Box {
   lines: string[]
 }
 
-function Loop({ boxes, accent, back, label, caption }: { boxes: Box[]; accent: number; back: string; label: string; caption: string }) {
+export function Loop({ boxes, accent, back, label, caption }: { boxes: Box[]; accent: number; back: string; label: string; caption: string }) {
   const n = boxes.length
   const gap = n === 4 ? 24 : 42
   const width = (680 - gap * (n - 1)) / n

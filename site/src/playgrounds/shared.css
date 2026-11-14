@@ -285,3 +285,71 @@ span.key-4 {
   fill: var(--text-muted);
   opacity: 0.55;
 }
+
+/* Week 16 */
+.choices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.choice {
+  margin: 0;
+  padding: 10px 12px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--page);
+  min-width: 0;
+}
+.choice legend {
+  padding: 0 6px;
+  font-size: 0.82rem;
+  font-weight: 650;
+  color: var(--text-secondary);
+}
+.choice-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.92rem;
+}
+.choice-option.is-on {
+  background: var(--accent-wash);
+  color: var(--accent-ink);
+  font-weight: 650;
+}
+.choice-option input {
+  accent-color: var(--accent);
+}
+.advice {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.advice-item {
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--page);
+}
+.advice-title {
+  font-weight: 650;
+}
+.advice-why {
+  margin: 2px 0 8px;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+.advice-weeks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.advice-weeks .chip {
+  text-decoration: none;
+}
