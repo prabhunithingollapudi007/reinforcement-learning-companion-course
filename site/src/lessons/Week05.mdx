@@ -1,0 +1,177 @@
+import { BigPicture, Bridge, Derivation, PlainWords, Recap, Refresher, TryThis } from '../components/Blocks'
+import { Quiz } from '../components/Quiz'
+import { MethodFamilies, RewardToGo, TrajectoryFactors, TryScoreShift } from '../figures/week05'
+import { LabRunner } from '../lab/LabRunner'
+import { PolicyClimb } from '../playgrounds/week05/PolicyClimb'
+import { AliasedCorridor, BaselineSpread } from '../playgrounds/week05/Variance'
+import { week05Quiz } from './week05.quiz'
+
+<BigPicture>
+
+So far the policy was a by-product: learn values, then act greedily on them. This week turns that around. Give the policy its own parameters $\theta$, and adjust them directly to make expected return larger. The surprise is that this can be done with nothing but sampled episodes: no model, no value function, not even a differentiable reward.
+
+</BigPicture>
+
+<MethodFamilies />
+
+<Refresher title="Gradient ascent and the log-derivative identity">
+
+To maximize $J(\theta)$, repeatedly step in the direction of its gradient: $\theta \leftarrow \theta + \alpha \nabla_\theta J(\theta)$. One identity does most of the work this week: for any positive function, $\nabla_\theta p(\theta) = p(\theta)\, \nabla_\theta \log p(\theta)$, which is just the chain rule for $\log$ rearranged.
+
+</Refresher>
+
+## Why learn the policy directly
+
+Three reasons, the first two practical. With continuous actions, $\arg\max_a Q(s, a)$ is itself an optimization problem, while a policy network can simply output an action. Small changes in $\theta$ give small changes in behaviour, which is gentler than a greedy policy flipping when two Q-values cross. And the third: sometimes the best policy is random, and a greedy policy never is.
+
+<AliasedCorridor />
+
+<TryThis>
+
+1. Drag the slider to 0 or 1, a deterministic policy. The agent commits to one direction in both grey cells, and every start on the wrong side loops forever.
+2. Set it to 0.5. Average time to the goal is 4.5 steps, the best possible. No deterministic policy can reach it from every start.
+
+</TryThis>
+
+## The objective
+
+Write the policy as $\pi_\theta(a \mid s)$ and let $\tau = (s_0, a_0, r_0, \dots)$ be a whole episode with total reward $R(\tau)$. The quantity to maximize is the value of the policy:
+
+$$
+V(\theta) = \mathbb{E}_{\tau \sim \pi_\theta} \big[ R(\tau) \big] = \sum_\tau P(\tau; \theta)\, R(\tau)
+$$
+
+$\theta$ appears only inside $P(\tau; \theta)$: changing the policy changes which episodes are likely, not what any episode is worth.
+
+## The gradient, from samples
+
+Differentiate, then apply the log-derivative identity to turn the result back into an expectation:
+
+$$
+\nabla_\theta V(\theta) = \sum_\tau \nabla_\theta P(\tau; \theta)\, R(\tau) = \sum_\tau P(\tau; \theta)\, R(\tau)\, \nabla_\theta \log P(\tau; \theta) = \mathbb{E}_{\tau} \big[ R(\tau)\, \nabla_\theta \log P(\tau; \theta) \big]
+$$
+
+An expectation can be estimated by sampling. What is left is $\nabla_\theta \log P(\tau; \theta)$, which looks as if it needs the dynamics.
+
+<TrajectoryFactors />
+
+Putting it together, with $m$ sampled episodes:
+
+$$
+\nabla_\theta V(\theta) \approx \frac{1}{m} \sum_{i=1}^{m} R(\tau^{(i)}) \sum_t \nabla_\theta \log \pi_\theta\big(a_t^{(i)} \mid s_t^{(i)}\big)
+$$
+
+This is the **likelihood-ratio** or **score-function** policy gradient, and the algorithm that uses it is **REINFORCE**.
+
+<TryScoreShift />
+
+<PlainWords>
+
+Run the policy. For each action it took, ask "how would I change θ to make that action more likely?" Then make that change in proportion to how well the episode went. Good episodes pull the policy toward what it did; bad ones pull less, or push away.
+
+</PlainWords>
+
+The score $\nabla_\theta \log \pi_\theta(a \mid s)$ has a simple form for the two standard policy classes:
+
+| Policy | Used for | Score function |
+|---|---|---|
+| Softmax over $\phi(s,a)^\top \theta$ | discrete actions | $\phi(s, a) - \mathbb{E}_{\pi_\theta}[\phi(s, \cdot)]$ |
+| Gaussian with mean $\mu_\theta(s)$ | continuous actions | $\dfrac{(a - \mu_\theta(s))}{\sigma^2} \nabla_\theta \mu_\theta(s)$ |
+
+For a neural-network policy, automatic differentiation computes it.
+
+<PolicyClimb />
+
+<TryThis>
+
+1. Press **25 updates** twice. The bell walks up the hill and settles at the best action, 2, using only the rewards of the actions it sampled.
+2. Reset. Set **constant added to every reward** to +5 and press 25 updates. Nothing changes: with a baseline, adding a constant to every reward makes no difference.
+3. Now untick **Subtract a baseline** and run again. The same +5 that did not matter a moment ago now throws the policy around. The problem has not changed; the estimator has become far noisier.
+4. With the baseline still off, lower the batch to 5. The policy can leave the chart entirely.
+
+</TryThis>
+
+## Reducing variance
+
+The estimator is unbiased and very noisy. Two changes cut the noise without adding bias.
+
+**Use only future rewards.** An action cannot affect rewards that came before it.
+
+<RewardToGo />
+
+$$
+\nabla_\theta V(\theta) \approx \frac{1}{m} \sum_{i} \sum_t \nabla_\theta \log \pi_\theta(a_t \mid s_t) \Big( \sum_{t' \ge t} r_{t'} \Big)
+$$
+
+**Subtract a baseline.** Replace the reward-to-go $G_t$ with $G_t - b(s_t)$, where $b$ depends on the state but not on the action. A good choice is the expected return from that state, so each action is judged against what usually happens there.
+
+<BaselineSpread />
+
+<TryThis>
+
+1. At the starting settings the two rows are centred on the same place, the true gradient 0.26. The top row's spread is about 0.75; the bottom row's is 0.11.
+2. Raise the constant to +5. The top row's spread grows to about 1.7 while the bottom row does not move: fifteen times less noise.
+3. Set the constant to 0. The baseline still helps, 0.16 against 0.11, because rewards near their average carry little information either way.
+4. Raise the batch size. Both rows tighten: more samples is the other way to cut noise, and the expensive one.
+
+</TryThis>
+
+<Derivation title="A baseline does not bias the gradient" why="it is two lines, and the same fact is what lets Week 7 replace the return with an advantage estimate from a learned critic.">
+
+For any $b(s)$ that does not depend on the action,
+
+$$
+\mathbb{E}_{a \sim \pi_\theta} \big[ \nabla_\theta \log \pi_\theta(a \mid s)\, b(s) \big] = b(s) \sum_a \pi_\theta(a \mid s)\, \nabla_\theta \log \pi_\theta(a \mid s) = b(s) \sum_a \nabla_\theta \pi_\theta(a \mid s) = b(s)\, \nabla_\theta 1 = 0 .
+$$
+
+The probabilities sum to 1 whatever $\theta$ is, so the gradient of their sum is zero. The baseline term adds nothing to the expectation and can only change the variance.
+
+</Derivation>
+
+## The policy gradient theorem
+
+The same result holds more generally, with the return replaced by the action value:
+
+$$
+\nabla_\theta J(\theta) = \mathbb{E}_{\pi_\theta} \big[ \nabla_\theta \log \pi_\theta(a \mid s)\; Q^{\pi_\theta}(s, a) \big]
+$$
+
+REINFORCE uses the sampled reward-to-go as an unbiased estimate of $Q^{\pi_\theta}(s, a)$. Replacing it with a learned estimate is the actor-critic idea of Week 7.
+
+<Bridge title="how it is written in code">
+
+CS 224R points out that nobody implements the gradient formula by hand. You build a scalar whose gradient is the estimator and let automatic differentiation do the rest:
+
+$$
+\text{loss}(\theta) = - \frac{1}{m} \sum_{i} \sum_t \log \pi_\theta(a_t \mid s_t) \cdot \text{weight}_t, \qquad \text{weight}_t = G_t - b(s_t) \ \text{treated as a constant.}
+$$
+
+It is the cross-entropy loss of imitation learning with each sample weighted by how well it did. The same lecture also notes the catch that drives next week: every gradient step needs **fresh** episodes from the current policy.
+
+</Bridge>
+
+## What breaks next
+
+Policy gradients are simple and general, and they have two weaknesses. They are **on-policy**: data from an old policy cannot be reused as it stands, so each update costs new episodes. And the **step size** is treacherous: too small and nothing happens, too large and the policy lands somewhere bad, collects bad data, and cannot recover. Week 6 is about taking the largest step that is still safe.
+
+## Python lab
+
+Implement REINFORCE in PyTorch: reward-to-go, and the loss with a baseline. The last test trains on CartPole, so it takes about half a minute.
+
+<LabRunner week="week05" />
+
+## Quiz
+
+<Quiz questions={week05Quiz} />
+
+<Recap>
+
+- **Policy-based** methods parameterize the policy $\pi_\theta$ and ascend the gradient of expected return. They handle continuous actions and can learn stochastic policies.
+- The **likelihood-ratio trick**: $\nabla_\theta V = \mathbb{E}[R(\tau)\, \nabla_\theta \log P(\tau; \theta)]$, and the dynamics drop out of $\nabla_\theta \log P$, leaving a sum of **score functions** $\nabla_\theta \log \pi_\theta(a_t \mid s_t)$.
+- **REINFORCE**: sample episodes, weight each action's score by the return, step.
+- In words: make actions that were followed by high return more likely.
+- Variance reduction without bias: use the **reward-to-go**, and subtract a **baseline** that depends only on the state.
+- The **policy gradient theorem**: $\nabla_\theta J = \mathbb{E}[\nabla_\theta \log \pi_\theta(a \mid s)\, Q^{\pi_\theta}(s, a)]$.
+- Weaknesses: on-policy, so sample-hungry, and sensitive to step size.
+
+</Recap>

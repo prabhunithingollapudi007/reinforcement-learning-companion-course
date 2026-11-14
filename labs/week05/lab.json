@@ -1,0 +1,12 @@
+{
+  "title": "REINFORCE",
+  "edit": "lab.py",
+  "starter": "starter/lab.py",
+  "readonly": ["agent.py", "test_lab.py"],
+  "solution": "solution.py",
+  "steps": [
+    { "function": "rewards_to_go", "hint": "The same backward loop as Week 2's returns." },
+    { "function": "standardize", "hint": "(w - w.mean()) / (w.std() + 1e-8)." },
+    { "function": "policy_loss", "hint": "Categorical(logits=policy(states)).log_prob(actions), times the detached weights, negated and averaged." }
+  ]
+}

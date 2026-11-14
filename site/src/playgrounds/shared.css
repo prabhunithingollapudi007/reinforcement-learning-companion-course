@@ -173,3 +173,12 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Week 5 */
+.arrow-path {
+  fill: none;
+  stroke: var(--text-primary);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}

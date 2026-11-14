@@ -76,7 +76,7 @@ export function LineChart({
     return M.top + ((top - t) / (top - bottom || 1)) * plotH
   }
 
-  const xStep = niceStep(n - 1)
+  const xStep = Math.max(1, niceStep(n - 1)) // x is a count, so never tick at fractions
   const xTicks = Array.from({ length: Math.floor((n - 1) / xStep) + 1 }, (_, i) => Math.round(i * xStep))
   const yTicks: number[] = []
   if (log) for (let e = top; e >= bottom; e -= Math.max(1, Math.round((top - bottom) / 4))) yTicks.push(10 ** e)
