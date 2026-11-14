@@ -1,0 +1,163 @@
+import { BigPicture, Derivation, PlainWords, Recap, Refresher, TryThis } from '../components/Blocks'
+import { Quiz } from '../components/Quiz'
+import { CourseQuadrant } from '../figures/week01'
+import { ReturnsBackward, ThreeBackups, UpdateAnatomy } from '../figures/week02'
+import { LabRunner } from '../lab/LabRunner'
+import { BatchAB } from '../playgrounds/week02/BatchAB'
+import { CorridorLearner } from '../playgrounds/week02/CorridorLearner'
+import { TargetSpread } from '../playgrounds/week02/TargetSpread'
+import { week02Quiz } from './week02.quiz'
+
+<BigPicture>
+
+Last week every backup summed over next states using $P(s' \mid s, a)$. This week that model is gone. All the agent has is what happens to it: states, actions and rewards, one step at a time. The job is still **policy evaluation**, working out how good a fixed policy is, but now from experience alone.
+
+</BigPicture>
+
+<CourseQuadrant here="tabular" />
+
+<Refresher title="Estimators: bias, variance and consistency">
+
+An estimator is a rule that turns data into a guess. Its **bias** is how far its average guess is from the truth; its **variance** is how much the guess moves from one dataset to the next. Mean squared error is variance plus bias squared. An estimator is **consistent** if it converges to the truth as data grows, which a biased estimator can still do.
+
+</Refresher>
+
+## Three ways to estimate a value
+
+<ThreeBackups />
+
+Two ideas separate the three panels:
+
+- **Sampling**: use what actually happened in place of an average over everything that could happen. Monte Carlo and TD both sample; dynamic programming does not.
+- **Bootstrapping**: use your current estimate of the next state in place of what really followed. Dynamic programming and TD both bootstrap; Monte Carlo does not.
+
+TD learning does both, which is why it needs neither a model nor a finished episode.
+
+## Monte Carlo: value is average return
+
+The value of a state is its expected return, so run the policy, record the return after each visit, and average. No model, and no Markov assumption either.
+
+<ReturnsBackward />
+
+**First-visit** Monte Carlo is unbiased. **Every-visit** is biased, because returns from the same episode overlap, but it is consistent and often has lower error in practice.
+
+Keeping every return to average them is unnecessary. The same average can be kept incrementally, and loosening it to a fixed step size $\alpha$ gives the form everything else builds on:
+
+$$
+V(s_t) \leftarrow V(s_t) + \alpha \big( G_t - V(s_t) \big)
+$$
+
+## One update rule, two targets
+
+<UpdateAnatomy />
+
+**TD(0)** keeps the update and swaps the target. It replaces the rest of the return with the current estimate of where it landed:
+
+$$
+V(s_t) \leftarrow V(s_t) + \alpha \big( \underbrace{r_t + \gamma V(s_{t+1})}_{\text{TD target}} - V(s_t) \big), \qquad \delta_t = r_t + \gamma V(s_{t+1}) - V(s_t) .
+$$
+
+$\delta_t$ is the **TD error**. It will reappear in almost every algorithm from here on.
+
+<PlainWords>
+
+Monte Carlo waits to see how the episode turns out, then updates. TD updates immediately, by trusting its own guess about the next state: it learns a guess from a guess. That sounds circular, but each update mixes in one real reward, and that is enough to pull the guesses toward the truth.
+
+</PlainWords>
+
+The lecture's episode shows the cost of that. After the single episode above, Monte Carlo has learned something about all three states it visited: $[1, \gamma^2, \gamma^3]$ for $s_1, s_2, s_3$. TD with $\alpha = 1$ has learned only $V(s_1) = 1$, because when it passed through $s_2$ and $s_3$ their neighbours were still valued at zero. TD passes information back one state per visit.
+
+<CorridorLearner />
+
+<TryThis>
+
+1. Press **Run 1 episode** a few times. Monte Carlo moves every shaded column at once. TD moves only the columns next to something it already knows.
+2. Look at the averaged chart. At these settings Monte Carlo is well ahead after 10 episodes (error about 3.0 against 5.3), and TD has overtaken it by 100 (0.8 against 1.2). Monte Carlo learns fast and then rattles around; TD starts slow and settles lower.
+3. Raise α to 0.4. Monte Carlo's curve flattens out near 2.2: its targets are so noisy that large steps never settle. TD copes far better with the same step size.
+4. Lower α to 0.04. Now Monte Carlo wins over the whole 100 episodes. Small steps average away its noise, while TD has not had time to pass values down the corridor.
+
+</TryThis>
+
+## Bias and variance
+
+Why do the two behave so differently? Look at the targets themselves.
+
+<TargetSpread />
+
+<TryThis>
+
+1. With the estimates exact, both rows are centred on the true value. The Monte Carlo targets are either 1 or 10, a variance of about 20. The TD targets are the values of the two neighbouring states, a variance of about 2.
+2. Drag the first slider to +2. The Monte Carlo row does not move: it never looks at the estimates. The TD row slides right by the same 2. **TD's bias is whatever error its current estimates have**, which is why it shrinks as learning proceeds.
+3. Lower γ. The Monte Carlo targets spread out, since the return now depends on how long the episode wandered.
+
+</TryThis>
+
+| | Monte Carlo | TD(0) |
+|---|---|---|
+| Target | whole return $G_t$ | $r_t + \gamma V(s_{t+1})$ |
+| Bias | none (first-visit) | yes, while estimates are wrong |
+| Variance | high | low |
+| Needs the episode to end | yes | no |
+| Assumes the state is Markov | no | yes |
+
+Both are consistent when the step size shrinks at the right rate: the steps must sum to infinity while their squares sum to something finite, for example $\alpha_n = 1/n$.
+
+<Derivation title="The running average is already an update rule" why="it shows the learning rate is not an extra idea bolted on: an exact average is the special case α = 1/N, and a constant α is an average that forgets old data, which is what you want once the policy starts changing next week.">
+
+Let $V_N$ be the average of the first $N$ returns from a state. Then
+
+$$
+V_N = \frac{1}{N} \sum_{i=1}^{N} G_i = \frac{1}{N} \big( G_N + (N-1) V_{N-1} \big) = V_{N-1} + \frac{1}{N} \big( G_N - V_{N-1} \big) .
+$$
+
+So averaging is the update rule with $\alpha = 1/N$. With a constant $\alpha$, a return seen $k$ updates ago carries weight $\alpha (1-\alpha)^k$: recent experience counts more, old experience fades.
+
+</Derivation>
+
+## Same data, different answers
+
+Suppose data is scarce, so you replay one fixed dataset until the estimates stop changing. Do the two methods agree?
+
+<BatchAB />
+
+They do not, and the reason is the last row of the table above.
+
+- **Batch Monte Carlo** converges to the values that best fit the returns it observed. It makes no assumption about how the states connect.
+- **Batch TD(0)** converges to the exact values of the most likely Markov model given the data. This is the same answer as **certainty equivalence**: count transitions and rewards to estimate $\hat P$ and $\hat R$, then solve that model with last week's tools.
+
+<PlainWords>
+
+TD believes the world is Markov and uses that belief to share information between states. If the belief is right, as it is for A and B here, TD gets more out of the same data. If the state is missing something important, Monte Carlo's refusal to assume anything is the safer choice.
+
+</PlainWords>
+
+Certainty equivalence is the most data-efficient of the three and the most expensive: it re-solves a model after every step.
+
+## What breaks next
+
+We can now score a policy without knowing the rules. Next week is the other half, improving it, and two things get in the way:
+
+- Acting greedily on $V$ needs the model to look one step ahead. The fix is to learn $Q(s, a)$ directly.
+- A policy that always acts greedily never tries the other actions, so it never learns what they are worth. The fix is deliberate **exploration**.
+
+## Python lab
+
+Write the estimators from this page and check them against the lecture's hand-worked episode, the A/B data, and last week's gridworld, where the exact values are known.
+
+<LabRunner week="week02" />
+
+## Quiz
+
+<Quiz questions={week02Quiz} />
+
+<Recap>
+
+- **Model-free policy evaluation**: estimate $V^\pi$ from experience, with no access to $P$ or $R$.
+- **Monte Carlo**: the target is the whole return. Unbiased, high variance, needs episodes to end, makes no Markov assumption.
+- **TD(0)**: the target is $r_t + \gamma V(s_{t+1})$. It bootstraps, so it is biased while the estimates are wrong, but has low variance and can update after every step.
+- One update shape for both: new = old + $\alpha$ × (target − old). The **TD error** $\delta_t$ is the error term for TD.
+- Monte Carlo moves every visited state at once; TD passes information back one state per visit.
+- On a fixed dataset, Monte Carlo fits the observed returns; TD fits the most likely Markov model, the same answer as **certainty equivalence**.
+- Next: turning evaluation into control needs $Q$ instead of $V$, and exploration.
+
+</Recap>

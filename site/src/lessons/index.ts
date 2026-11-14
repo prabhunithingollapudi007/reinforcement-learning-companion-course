@@ -1,10 +1,18 @@
 import { lazy, type ComponentType, type LazyExoticComponent } from 'react'
 
-// Week number -> lesson. A week with no entry shows its planned outline instead.
-export const LESSONS: Record<number, LazyExoticComponent<ComponentType>> = {
-  1: lazy(() => import('./Week01.mdx')),
+// Every file named WeekNN.mdx in this folder is a lesson; no registration needed.
+// A week with no file shows its planned outline instead.
+const modules = import.meta.glob<{ default: ComponentType }>('./Week*.mdx')
+
+export const LESSONS: Record<number, LazyExoticComponent<ComponentType>> = {}
+for (const [path, load] of Object.entries(modules)) {
+  const match = /Week(\d+)\.mdx$/.exec(path)
+  if (match) LESSONS[Number(match[1])] = lazy(load)
 }
 
+/** Rough reading-and-playing time, shown under the lesson title. */
 export const LESSON_MINUTES: Record<number, number> = {
   1: 60,
+  2: 60,
+  3: 60,
 }

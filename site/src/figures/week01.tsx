@@ -2,19 +2,26 @@ import type { ReactNode } from 'react'
 import { arrow } from './arrows'
 import { Figure } from './Figure'
 
-/** Where Week 1 sits: which of the two simplifying assumptions each part of the course keeps. */
-export function CourseQuadrant() {
+const QUADRANT_CAPTIONS = {
+  planning: 'Two assumptions make this week easy: you know the rules, and the world is small. The rest of the course removes them one at a time.',
+  tabular: 'The model is gone: the agent now has to learn from what happens to it. The world is still small enough for a table.',
+  deep: 'Both assumptions are gone: the agent learns from experience and can no longer keep one number per state.',
+  search: 'The rules are known again, but the world is far too large for a table, so search is guided by learned values.',
+}
+
+/** Where a week sits: which of the two simplifying assumptions it keeps. */
+export function CourseQuadrant({ here = 'planning' }: { here?: keyof typeof QUADRANT_CAPTIONS }) {
   const cells: { x: number; y: number; accent?: boolean; week: string; lines: string[] }[] = [
-    { x: 170, y: 44, accent: true, week: 'Week 1', lines: ['Planning: value iteration', 'and policy iteration'] },
-    { x: 440, y: 44, week: 'Week 12', lines: ['Search guided by learned', 'values (AlphaZero)'] },
-    { x: 170, y: 150, week: 'Weeks 2–3', lines: ['Learn from experience:', 'Monte Carlo, TD, Q-learning'] },
-    { x: 440, y: 150, week: 'Week 4 onward', lines: ['Deep RL: neither', 'assumption holds'] },
+    { x: 170, y: 44, accent: here === 'planning', week: 'Week 1', lines: ['Planning: value iteration', 'and policy iteration'] },
+    { x: 440, y: 44, accent: here === 'search', week: 'Week 12', lines: ['Search guided by learned', 'values (AlphaZero)'] },
+    { x: 170, y: 150, accent: here === 'tabular', week: 'Weeks 2–3', lines: ['Learn from experience:', 'Monte Carlo, TD, Q-learning'] },
+    { x: 440, y: 150, accent: here === 'deep', week: 'Week 4 onward', lines: ['Deep RL: neither', 'assumption holds'] },
   ]
   return (
     <Figure
       height={262}
       label="A two by two map. Model known and values in a table: Week 1. Model unknown, table: Weeks 2 and 3. Model unknown, approximation: Week 4 onward. Model known, approximation: Week 12."
-      caption="Two assumptions make this week easy: you know the rules, and the world is small. The rest of the course removes them one at a time."
+      caption={QUADRANT_CAPTIONS[here]}
     >
       <text x={300} y={28} textAnchor="middle" className="fig-label">
         Values fit in a table

@@ -1,0 +1,13 @@
+{
+  "title": "Estimating values from experience",
+  "edit": "lab.py",
+  "starter": "starter/lab.py",
+  "readonly": ["gridworld.py", "test_lab.py"],
+  "solution": "solution.py",
+  "steps": [
+    { "function": "returns", "hint": "Loop backwards: running = r + gamma * running." },
+    { "function": "monte_carlo", "hint": "Sum and count returns per state; skip repeat visits when first_visit is set." },
+    { "function": "td0", "hint": "After every step move V[s] toward r + gamma * V[s_next]; a finished episode is worth 0." },
+    { "function": "certainty_equivalence", "hint": "Count transitions and rewards, normalise, then solve (I - gamma * P_hat) V = R_hat." }
+  ]
+}

@@ -1,0 +1,132 @@
+/* Marks shared by the playgrounds from Week 2 on. */
+.bar-1 {
+  fill: var(--series-1);
+}
+.bar-2 {
+  fill: var(--series-2);
+}
+.bar-3 {
+  fill: var(--series-3);
+}
+.truth-tick {
+  stroke: var(--text-primary);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+.col-band {
+  fill: var(--accent-wash);
+}
+.col-label {
+  fill: var(--text-primary);
+  font-family: KaTeX_Math, 'Times New Roman', serif;
+  font-style: italic;
+  font-size: 16px;
+}
+.strip-label {
+  fill: var(--text-primary);
+  font-size: 13px;
+  font-weight: 650;
+}
+.mean-mark {
+  fill: var(--text-primary);
+}
+.truth-line {
+  stroke: var(--series-3);
+  stroke-width: 2;
+}
+.trace {
+  margin: 10px 0 0;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  min-height: 1.5em;
+}
+.trace .mono {
+  color: var(--text-primary);
+}
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+.swatches li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+.swatch-1 {
+  background: var(--series-1);
+}
+.swatch-2 {
+  background: var(--series-2);
+}
+.swatch-3 {
+  background: var(--series-3);
+}
+.swatch-truth {
+  width: 16px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--text-primary);
+}
+.chart-title {
+  margin: 14px 0 6px;
+  font-size: 0.86rem;
+  font-weight: 650;
+  color: var(--text-secondary);
+}
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 10px;
+  margin: 12px 0 14px;
+}
+.card {
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--page);
+}
+.card-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+.card-value {
+  margin: 4px 0 2px;
+  font-size: 1.5rem;
+  font-weight: 650;
+}
+.card-note {
+  font-size: 0.86rem;
+  color: var(--text-secondary);
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 4px 0 12px;
+}
+.chip {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+}
+.chip-accent {
+  background: var(--accent-wash);
+  color: var(--accent-ink);
+}
