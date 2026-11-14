@@ -1,0 +1,124 @@
+import { BigPicture, Bridge, PlainWords, Recap, TryThis } from '../components/Blocks'
+import { Quiz } from '../components/Quiz'
+import { ActionChunks, DriftAndCorrect, FlowRecipe, MeanIsWorst } from '../figures/week08'
+import { LabRunner } from '../lab/LabRunner'
+import { LaneKeeping, MistakeGrowth, NoiseToActions } from '../playgrounds/week08/Imitation'
+import { week08Quiz } from './week08.quiz'
+
+<BigPicture>
+
+Every method so far needed a reward and a lot of trial and error. Often neither is available: nobody can write down the reward for folding a shirt, and nobody wants a car to learn by crashing. But someone can simply *show* how it is done. **Imitation learning** turns demonstrations into a policy using supervised learning, with no reward and no exploration. It is how most robot policies are trained today, and it fails in two specific ways that this week is about.
+
+</BigPicture>
+
+## Behaviour cloning
+
+Given demonstrations $\mathcal{D} = \{(s, a)\}$ from an expert, treat the state as the input and the expert's action as the label:
+
+$$
+\min_\theta\; -\mathbb{E}_{(s, a) \sim \mathcal{D}} \big[ \log \pi_\theta(a \mid s) \big]
+$$
+
+Maximise the probability the policy gives to what the expert did. For a deterministic policy with continuous actions this becomes squared-error regression onto the expert's actions.
+
+It is appealing for what it does not need: no reward function, and no data from the learned policy, which matters when running a half-trained policy is unsafe or expensive. An algorithm that uses only an existing dataset is called **offline**; one that collects new data with the policy it is learning is **online**.
+
+## Problem one: averaging
+
+<MeanIsWorst />
+
+The fix is to predict a *distribution* over actions, expressive enough to have several peaks, and sample from it. The lecture is careful to separate two things that are easy to confuse: a bigger network does not help if its output is still a single mean. What matters is how expressive the **output distribution** is.
+
+| Output | How | Expressive? |
+|---|---|---|
+| A single action | regression | no: one value |
+| Gaussian | predict a mean and a width | barely: one peak |
+| Mixture of Gaussians | several means, widths and weights | a fixed number of peaks |
+| Discretise, then autoregress | categorical over bins, one action dimension at a time | yes |
+| Diffusion or flow matching | turn noise into an action in several steps | yes |
+
+The last two are what current robot and driving systems use.
+
+<FlowRecipe />
+
+<NoiseToActions />
+
+<TryThis>
+
+1. With 10 steps, the blue lines fan out from the noise and settle on the two demonstrated answers, about 60% left and 40% right, matching the demonstrators. Almost none end on the collision course. The orange line sits at −0.18, inside it.
+2. Set the steps to 1. Every blue line jumps straight to the orange line: **one generation step is regression to the mean.** From pure noise the best single guess for "which way is the data?" is its average.
+3. Raise the steps to 2, then 4. At 2 steps about 39% still crash; at 4 fewer than 6%. Each extra step lets the sample commit to a side a little earlier.
+4. Move the share who went left. The split of generated actions follows it; the orange line slides across the band.
+
+</TryThis>
+
+### Action chunks
+
+<ActionChunks />
+
+## Problem two: compounding errors
+
+<DriftAndCorrect />
+
+The name for the mismatch is **covariate shift**: the states the learned policy visits are not the states the expert visited, $p_\pi(s) \ne p_{\text{expert}}(s)$.
+
+<LaneKeeping />
+
+<TryThis>
+
+1. With no rounds of correction, the clone leaves the lane in 44 of 200 drives. The expert never does. The clone's steering is only slightly off, but that is enough to carry it past the edge of the shaded band, and outside the band it does nothing.
+2. Drag the first slider to **perfect copy**. Zero failures. A perfect clone never leaves the states the expert visited, so it never needs to know anything else. The whole problem starts from small errors.
+3. Put the error back and add one round of DAgger. Failures drop to zero and the band widens to most of the lane: the expert has now labelled the states the clone drifted into.
+4. Make the copy worse, 0.15. Without corrections it fails in more than half its drives; with one round it is fixed.
+
+</TryThis>
+
+**DAgger** (dataset aggregation) repeats four steps: run the learned policy; ask the expert what it would have done in each state visited; add those pairs to the dataset; retrain. It is data-efficient, and its practical weakness is the second step: it is awkward for a person to supply correct actions while the robot is the one driving. A common variant lets the expert **intervene**: watch the policy run, take over when it starts to go wrong, and record the correction.
+
+How much does compounding cost over a long task?
+
+<MistakeGrowth />
+
+With a 1% chance of error per step, a 100-step task has 1 expected mistake if errors are independent and about 37 if the first one is never recovered from. The second number grows like $\epsilon T^2$ where the first grows like $\epsilon T$. Long tasks are where cloning struggles.
+
+<PlainWords>
+
+A student who has only watched perfect driving has never seen what to do after a mistake. The demonstrations cover the road, not the verge. The remedies all amount to the same thing: get data from the verge, either by collecting a great deal and hoping, or by asking the expert about the places the student actually ends up.
+
+</PlainWords>
+
+## Reading the reward instead of the actions
+
+<Bridge title="CS 234's other route: inverse RL">
+
+CS 234 frames three questions around demonstrations. Behaviour cloning asks: can we copy the expert's policy directly? **Inverse RL** asks: can we recover the reward the expert was optimising? And apprenticeship learning asks: can we then use that reward to produce a good policy?
+
+The catch with the middle one is identifiability. If the expert is optimal, which rewards explain its behaviour? Infinitely many, including the reward that is zero everywhere, under which every policy is optimal. Methods need an extra principle to pick one, and maximum-entropy inverse RL is the influential choice. Learning rewards from people, this time from their judgements instead of their actions, is the second half of next week.
+
+</Bridge>
+
+## What breaks next
+
+Imitation is bounded by its teacher: copying an expert does not produce something better than the expert, and copying mediocre data produces mediocre behaviour. Next week keeps the fixed dataset and adds back what imitation threw away, the reward, to ask whether a policy can be learned from logged data that is *better* than the policy that logged it.
+
+## Python lab
+
+Clone a CartPole expert from a single short demonstration, watch it fail, then fix it with DAgger. You write the cloning loss and the DAgger data-collection step.
+
+<LabRunner week="week08" />
+
+## Quiz
+
+<Quiz questions={week08Quiz} />
+
+<Recap>
+
+- **Behaviour cloning** is supervised learning on expert state-action pairs: maximise $\log \pi_\theta(a \mid s)$ on the demonstrations. No reward, no exploration, fully **offline**.
+- **Averaging**: with several good ways to act, a single-valued prediction lands between them. Use an expressive output distribution: mixtures, discretised autoregressive, or **diffusion / flow matching**.
+- Flow matching trains by regression on a blend of noise and data, and generates by taking several small steps from noise. One step would give the mean.
+- **Action chunking** predicts several actions at once and executes them before deciding again.
+- **Compounding errors**: actions choose the next state, so small errors lead to unfamiliar states and larger errors. Mistakes can grow like $\epsilon T^2$ instead of $\epsilon T$.
+- **DAgger** fixes it by having the expert label the states the learner actually visits; interventions are the practical version.
+- **Inverse RL** recovers a reward instead of a policy, and has to choose among infinitely many rewards that fit.
+
+</Recap>

@@ -1,0 +1,12 @@
+{
+  "title": "Behaviour cloning and DAgger",
+  "edit": "lab.py",
+  "starter": "starter/lab.py",
+  "readonly": ["agent.py", "test_lab.py"],
+  "solution": "solution.py",
+  "steps": [
+    { "function": "cloning_loss", "hint": "log_softmax, gather the expert's action, mean, negate." },
+    { "function": "greedy_action", "hint": "argmax of the logits for one state, under torch.no_grad()." },
+    { "function": "dagger_round", "hint": "The learner chooses the actions; the expert supplies the labels." }
+  ]
+}
