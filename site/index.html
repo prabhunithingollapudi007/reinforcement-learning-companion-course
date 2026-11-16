@@ -4,7 +4,16 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>RL Companion</title>
+    <!-- The build replaces the title and adds each page's own description,
+         address and preview tags: see scripts/prerender.mjs and src/seo.ts. -->
+    <title>Reinforcement Learning Companion: a visual 16-week course</title>
+    <script>
+      // Apply a saved light or dark theme before the page is drawn.
+      try {
+        var t = localStorage.getItem('rl-companion.theme')
+        if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t)
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

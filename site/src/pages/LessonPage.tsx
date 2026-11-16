@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { SourceList } from '../components/Blocks'
 import { WEEKS, findWeek } from '../course'
 import { LESSONS, LESSON_MINUTES } from '../lessons'
+import { HOME, useLink, week as weekRoute } from '../router'
 
 interface Props {
   n: number
@@ -14,6 +15,7 @@ export function LessonPage({ n, done, onToggleDone }: Props) {
   const articleRef = useRef<HTMLElement>(null)
   const [toc, setToc] = useState<{ id: string; text: string }[]>([])
   const Lesson = LESSONS[n]
+  const link = useLink()
 
   // Build "On this page" from the lesson's section headings once it has rendered.
   useEffect(() => {
@@ -104,18 +106,18 @@ export function LessonPage({ n, done, onToggleDone }: Props) {
 
       <nav className="pager" aria-label="Lessons">
         {prev ? (
-          <a href={`#/week/${prev.n}`} className="pager-link">
+          <a href={link(weekRoute(prev.n))} className="pager-link">
             <span className="dim">← Week {prev.n}</span>
             {prev.title}
           </a>
         ) : (
-          <a href="#/" className="pager-link">
+          <a href={link(HOME)} className="pager-link">
             <span className="dim">←</span>
             Start here
           </a>
         )}
         {next && (
-          <a href={`#/week/${next.n}`} className="pager-link pager-next">
+          <a href={link(weekRoute(next.n))} className="pager-link pager-next">
             <span className="dim">Week {next.n} →</span>
             {next.title}
           </a>

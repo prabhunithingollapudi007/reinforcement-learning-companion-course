@@ -42,14 +42,10 @@ function PolicyBars({ before, after, beforeName, afterName, slot, notes }: { bef
                 {r.name}
               </text>
               <rect x={BAR_X} y={y + 4} width={Math.max(1, before[i] * BAR_W)} height={12} rx={4} className="bar-before">
-                <title>
-                  {beforeName}: {(before[i] * 100).toFixed(1)}%
-                </title>
+                <title>{`${beforeName}: ${(before[i] * 100).toFixed(1)}%`}</title>
               </rect>
               <rect x={BAR_X} y={y + 19} width={Math.max(1, after[i] * BAR_W)} height={12} rx={4} className={`bar-${slot}`}>
-                <title>
-                  {afterName}: {(after[i] * 100).toFixed(1)}%
-                </title>
+                <title>{`${afterName}: ${(after[i] * 100).toFixed(1)}%`}</title>
               </rect>
               <text x={BAR_X + Math.max(before[i], after[i]) * BAR_W + 8} y={y + 30} className="tick">
                 {(after[i] * 100).toFixed(0)}%

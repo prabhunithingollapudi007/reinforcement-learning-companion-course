@@ -1,42 +1,55 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useSyncExternalStore } from 'react'
 
 // Progress lives in this browser only. Every read and write is guarded so the
 // site still works if storage is blocked.
+//
+// Pages are also rendered once at build time, where there is no browser storage.
+// Each hook therefore names what that first render should assume (nothing
+// completed, no saved theme) and switches to the stored values once it is in
+// the browser.
 
 const KEY = 'rl-companion.progress.v1'
+const THEME_KEY = 'rl-companion.theme'
 
-interface Stored {
-  completed: number[]
+const listeners = new Set<() => void>()
+const subscribe = (listener: () => void) => {
+  listeners.add(listener)
+  return () => {
+    listeners.delete(listener)
+  }
 }
+const changed = () => listeners.forEach((listener) => listener())
 
-function read(): Stored {
+const NONE: number[] = []
+let completedNow: number[] | null = null
+
+function readCompleted(): number[] {
+  if (completedNow) return completedNow
+  completedNow = NONE
   try {
     const raw = localStorage.getItem(KEY)
     if (raw) {
-      const parsed = JSON.parse(raw) as Stored
-      if (Array.isArray(parsed.completed)) return parsed
+      const parsed = JSON.parse(raw) as { completed?: unknown }
+      if (Array.isArray(parsed.completed)) completedNow = parsed.completed as number[]
     }
   } catch {
     /* storage unavailable */
   }
-  return { completed: [] }
-}
-
-function write(value: Stored) {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(value))
-  } catch {
-    /* storage unavailable */
-  }
+  return completedNow
 }
 
 export function useProgress() {
-  const [completed, setCompleted] = useState<number[]>(() => read().completed)
-
-  useEffect(() => write({ completed }), [completed])
+  const completed = useSyncExternalStore(subscribe, readCompleted, () => NONE)
 
   const toggle = useCallback((week: number) => {
-    setCompleted((prev) => (prev.includes(week) ? prev.filter((w) => w !== week) : [...prev, week]))
+    const prev = readCompleted()
+    completedNow = prev.includes(week) ? prev.filter((w) => w !== week) : [...prev, week]
+    try {
+      localStorage.setItem(KEY, JSON.stringify({ completed: completedNow }))
+    } catch {
+      /* storage unavailable */
+    }
+    changed()
   }, [])
 
   return { completed, toggle }
@@ -44,29 +57,51 @@ export function useProgress() {
 
 export type Theme = 'light' | 'dark'
 
-export function useTheme() {
-  const [theme, setTheme] = useState<Theme | null>(() => {
-    try {
-      const saved = localStorage.getItem('rl-companion.theme')
-      return saved === 'light' || saved === 'dark' ? saved : null
-    } catch {
-      return null
-    }
-  })
+let savedTheme: Theme | null | undefined
 
+function readTheme(): Theme | null {
+  if (savedTheme !== undefined) return savedTheme
+  savedTheme = null
+  try {
+    const saved = localStorage.getItem(THEME_KEY)
+    if (saved === 'light' || saved === 'dark') savedTheme = saved
+  } catch {
+    /* storage unavailable */
+  }
+  return savedTheme
+}
+
+const DARK_QUERY = '(prefers-color-scheme: dark)'
+const subscribeSystem = (listener: () => void) => {
+  const query = window.matchMedia(DARK_QUERY)
+  query.addEventListener('change', listener)
+  return () => query.removeEventListener('change', listener)
+}
+
+export function useTheme() {
+  const theme = useSyncExternalStore(subscribe, readTheme, () => null)
+  const systemDark = useSyncExternalStore(
+    subscribeSystem,
+    () => window.matchMedia(DARK_QUERY).matches,
+    () => true,
+  )
+
+  // index.html applies a saved theme before the page is drawn; this keeps it in step afterwards.
   useEffect(() => {
-    const root = document.documentElement
-    if (theme) root.setAttribute('data-theme', theme)
-    else root.removeAttribute('data-theme')
+    if (theme) document.documentElement.setAttribute('data-theme', theme)
+  }, [theme])
+
+  const effective: Theme = theme ?? (systemDark ? 'dark' : 'light')
+
+  const toggle = () => {
+    savedTheme = effective === 'dark' ? 'light' : 'dark'
     try {
-      if (theme) localStorage.setItem('rl-companion.theme', theme)
+      localStorage.setItem(THEME_KEY, savedTheme)
     } catch {
       /* storage unavailable */
     }
-  }, [theme])
+    changed()
+  }
 
-  const effective: Theme =
-    theme ?? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-
-  return { theme: effective, toggle: () => setTheme(effective === 'dark' ? 'light' : 'dark') }
+  return { theme: effective, toggle }
 }

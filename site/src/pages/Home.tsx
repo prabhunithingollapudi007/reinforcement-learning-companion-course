@@ -1,7 +1,9 @@
 import { COURSE_LINKS, PARTS, REPO_URL } from '../course'
 import { LESSONS } from '../lessons'
+import { useLink, week } from '../router'
 
 export function Home({ completed }: { completed: number[] }) {
+  const link = useLink()
   return (
     <article className="lesson">
       <header className="lesson-head">
@@ -63,7 +65,7 @@ export function Home({ completed }: { completed: number[] }) {
               <ul className="map-weeks">
                 {part.weeks.map((w) => (
                   <li key={w.n}>
-                    <a href={`#/week/${w.n}`}>
+                    <a href={link(week(w.n))}>
                       <span className="nav-num">{completed.includes(w.n) ? '✓' : String(w.n).padStart(2, '0')}</span>
                       {w.title}
                     </a>
@@ -95,7 +97,7 @@ export function Home({ completed }: { completed: number[] }) {
         </p>
 
         <p>
-          <a className="btn btn-primary" href="#/week/1">
+          <a className="btn btn-primary" href={link(week(1))}>
             Begin with Week 1 →
           </a>
         </p>

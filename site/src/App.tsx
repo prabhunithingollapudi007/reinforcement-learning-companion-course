@@ -1,32 +1,50 @@
 import { MDXProvider } from '@mdx-js/react'
 import { Suspense, useEffect, useState, type ComponentProps } from 'react'
-import { PARTS, WEEKS, findWeek } from './course'
+import { PARTS, WEEKS } from './course'
 import { LESSONS } from './lessons'
 import { Home } from './pages/Home'
 import { LessonPage } from './pages/LessonPage'
 import { Notation } from './pages/Notation'
 import { useProgress, useTheme } from './progress'
+import { HOME, NOTATION, RouteContext, linkTo, parsePath, routeAt, routePath, week, type Route } from './router'
+import { pageMeta } from './seo'
 
-type Route = { page: 'home' } | { page: 'notation' } | { page: 'week'; n: number }
+/**
+ * The current page. It starts as the page the address names, then follows clicks
+ * on the site's own links (without reloading) and the browser's back button.
+ * `base` is the site root; it is absent when a page is rendered at build time.
+ */
+function useRoute(initial: Route, base?: string): Route {
+  const [route, setRoute] = useState<Route>(initial)
 
-function parseRoute(hash: string): Route {
-  const path = hash.replace(/^#\/?/, '')
-  const week = /^week\/(\d+)$/.exec(path)
-  if (week && findWeek(Number(week[1]))) return { page: 'week', n: Number(week[1]) }
-  if (path === 'notation') return { page: 'notation' }
-  return { page: 'home' }
-}
-
-function useRoute(): Route {
-  const [route, setRoute] = useState<Route>(() => parseRoute(window.location.hash))
   useEffect(() => {
-    const onChange = () => {
-      setRoute(parseRoute(window.location.hash))
+    if (base === undefined) return
+    const onClick = (e: MouseEvent) => {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+      const link = e.target instanceof Element ? e.target.closest('a') : null
+      if (!link || link.target || link.hasAttribute('download')) return
+      const url = new URL(link.href, window.location.href)
+      if (url.origin !== window.location.origin || url.hash || !url.pathname.startsWith(base)) return
+      const to = routeAt(url.pathname.slice(base.length))
+      if (!to) return
+      e.preventDefault()
+      window.history.pushState(null, '', base + routePath(to))
+      setRoute(to)
       window.scrollTo(0, 0)
     }
-    window.addEventListener('hashchange', onChange)
-    return () => window.removeEventListener('hashchange', onChange)
-  }, [])
+    const onPop = () => setRoute(parsePath(window.location.pathname).route)
+    document.addEventListener('click', onClick)
+    window.addEventListener('popstate', onPop)
+    return () => {
+      document.removeEventListener('click', onClick)
+      window.removeEventListener('popstate', onPop)
+    }
+  }, [base])
+
+  useEffect(() => {
+    document.title = pageMeta(route).title
+  }, [route])
+
   return route
 }
 
@@ -49,7 +67,8 @@ function textOf(node: unknown): string {
 const mdxComponents = {
   h2: (props: ComponentProps<'h2'>) => <h2 id={slug(textOf(props.children))} {...props} />,
   a: (props: ComponentProps<'a'>) =>
-    props.href?.startsWith('#') ? <a {...props} /> : <a target="_blank" rel="noreferrer" {...props} />,
+    // Links to other sites open in a new tab; links within this site do not.
+    /^[a-z][a-z0-9+.-]*:/i.test(props.href ?? '') ? <a target="_blank" rel="noreferrer" {...props} /> : <a {...props} />,
   table: (props: ComponentProps<'table'>) => (
     <div className="table-scroll">
       <table {...props} />
@@ -57,8 +76,9 @@ const mdxComponents = {
   ),
 }
 
-export default function App() {
-  const route = useRoute()
+export default function App({ initialRoute, base }: { initialRoute: Route; base?: string }) {
+  const route = useRoute(initialRoute, base)
+  const link = (to: Route) => linkTo(to, route)
   const { completed, toggle } = useProgress()
   const { theme, toggle: toggleTheme } = useTheme()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -67,12 +87,13 @@ export default function App() {
   const done = completed.filter((n) => LESSONS[n]).length
 
   return (
+    <RouteContext value={route}>
     <div className="shell">
       <header className="topbar">
         <button type="button" className="btn btn-quiet menu-button" onClick={() => setMenuOpen((o) => !o)} aria-expanded={menuOpen}>
           {menuOpen ? 'Close' : 'Lessons'}
         </button>
-        <a className="topbar-title" href="#/">
+        <a className="topbar-title" href={link(HOME)}>
           RL Companion
         </a>
       </header>
@@ -85,7 +106,7 @@ export default function App() {
           if ((e.target as HTMLElement).closest('a')) setMenuOpen(false)
         }}
       >
-        <a className="brand" href="#/">
+        <a className="brand" href={link(HOME)}>
           <span className="brand-kicker">Unofficial · CS 234 + CS 224R</span>
           <span className="brand-name">Reinforcement Learning Companion</span>
         </a>
@@ -104,12 +125,12 @@ export default function App() {
 
         <ul className="nav-list">
           <li>
-            <a className={`nav-link ${route.page === 'home' ? 'is-active' : ''}`} href="#/">
+            <a className={`nav-link ${route.page === 'home' ? 'is-active' : ''}`} href={link(HOME)}>
               Start here
             </a>
           </li>
           <li>
-            <a className={`nav-link ${route.page === 'notation' ? 'is-active' : ''}`} href="#/notation">
+            <a className={`nav-link ${route.page === 'notation' ? 'is-active' : ''}`} href={link(NOTATION)}>
               Notation
             </a>
           </li>
@@ -126,7 +147,7 @@ export default function App() {
                 const available = Boolean(LESSONS[w.n])
                 return (
                   <li key={w.n}>
-                    <a className={`nav-link ${active ? 'is-active' : ''} ${available ? '' : 'is-planned'}`} href={`#/week/${w.n}`}>
+                    <a className={`nav-link ${active ? 'is-active' : ''} ${available ? '' : 'is-planned'}`} href={link(week(w.n))}>
                       <span className="nav-num">{completed.includes(w.n) ? '✓' : String(w.n).padStart(2, '0')}</span>
                       <span className="nav-text">{w.title}</span>
                       {!available && <span className="nav-soon">planned</span>}
@@ -155,5 +176,6 @@ export default function App() {
         </MDXProvider>
       </main>
     </div>
+    </RouteContext>
   )
 }

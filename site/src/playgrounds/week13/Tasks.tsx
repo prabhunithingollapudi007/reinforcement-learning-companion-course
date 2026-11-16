@@ -149,9 +149,7 @@ function PullStrip({ label, pulls, y }: { label: string; pulls: Pull[]; y: numbe
       {pulls.map((p, t) => (
         <g key={t}>
           <rect x={x0 + t * w + 2} y={y} width={w - 4} height={38} rx={8} className={p.paid ? 'bar-3' : p.arm === CLUE ? 'pull-clue' : 'reach-no'}>
-            <title>
-              pull {t + 1}: {p.arm === CLUE ? 'the clue' : `lever ${p.arm + 1}`}, {p.paid ? 'paid 1' : 'paid nothing'}
-            </title>
+            <title>{`pull ${t + 1}: ${p.arm === CLUE ? 'the clue' : `lever ${p.arm + 1}`}, ${p.paid ? 'paid 1' : 'paid nothing'}`}</title>
           </rect>
           <text x={x0 + t * w + w / 2} y={y + 24} textAnchor="middle" className={p.paid ? 'pull-text-on' : 'pull-text'} pointerEvents="none">
             {leverName(p.arm)}

@@ -8,6 +8,9 @@ write and test inside the page.
 
 **Read it online: https://prabhunithingollapudi007.github.io/reinforcement-learning-companion-course/**
 (lessons, figures, playgrounds and quizzes; the labs need a local copy, see below).
+Each week has its own address, for example
+[`/week/6/`](https://prabhunithingollapudi007.github.io/reinforcement-learning-companion-course/week/6/)
+for PPO.
 
 > **Unofficial.** This is an independent study aid. It is not affiliated with,
 > endorsed by, or produced by Stanford University or the instructors of either
@@ -96,15 +99,23 @@ Every number a lesson quotes ("after 200 episodes, 61%") comes from a
 deterministic simulation in `site/src/rl/` and is pinned by a test there, so the
 text cannot drift from what the playground shows.
 
+The build writes a complete HTML page for the home page and for every week
+(`dist/week/1/` to `dist/week/16/`), each with its own title and description, plus
+`sitemap.xml` and an [`llms.txt`](https://prabhunithingollapudi007.github.io/reinforcement-learning-companion-course/llms.txt)
+summary for AI assistants. That is what lets search engines and link previews
+read the lessons. The build fails if any page does not render in full.
+
 ## Layout
 
 - `site/` - the website (Vite, React, MDX, KaTeX).
-  - `src/course.ts` - the 16-week outline and source links.
+  - `src/course.ts` - the 16-week outline, source links and the site's public address.
   - `src/lessons/` - one MDX file and one quiz file per week.
   - `src/figures/` - the static diagrams for each week.
   - `src/playgrounds/` - the interactive panels.
   - `src/rl/` - the algorithms behind the playgrounds, with their tests.
   - `src/lab/` and `labBridge.ts` - the in-page lab editor and the local bridge behind it.
+  - `src/router.ts` and `src/seo.ts` - page addresses, and what each page tells search engines.
+  - `scripts/prerender.mjs` - the build step that writes one HTML page per week.
 - `labs/` - Python labs, one folder per week: `lab.py` (yours), `starter/`,
   `solution.py`, `test_lab.py`, and a provided environment module.
 
@@ -122,6 +133,9 @@ an issue if something does not.
 3. Put any algorithm code in `site/src/rl/` with tests that pin every number the lesson quotes.
 4. Add the lab under `labs/weekNN/` with a `lab.json`, a `starter/` copy and tests,
    then embed it in the lesson with `<LabRunner week="weekNN" />`.
+
+If you host your own copy, set `SITE_URL` in `site/src/course.ts` to its address:
+the page addresses given to search engines are built from it.
 
 ## Licence
 

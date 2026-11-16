@@ -82,9 +82,7 @@ export function FromSimToReal() {
               <line x1={TRACK_X} x2={TRACK_X + TRACK_W} y1={y} y2={y} className="axis-line" />
               <line x1={TRACK_X} x2={tx(r.lands)} y1={y} y2={y} className={`series series-${r.slot}`} />
               <circle cx={tx(r.lands)} cy={y} r={9} className={`dot dot-${r.slot}`}>
-                <title>
-                  stops at {r.lands.toFixed(2)} m: {cm(r.lands)}
-                </title>
+                <title>{`stops at ${r.lands.toFixed(2)} m: ${cm(r.lands)}`}</title>
               </circle>
               <text x={tx(r.lands) + (r.lands > 1.7 ? -16 : 16)} y={y - 12} textAnchor={r.lands > 1.7 ? 'end' : 'start'} className="tick">
                 {off ? `off the end, at ${r.lands.toFixed(2)} m` : cm(r.lands)}
@@ -170,10 +168,10 @@ export function KeepWhatWorked() {
                 {s.name}
               </text>
               <rect x={barX} y={y + 4} width={Math.max(1, a[i] * barW)} height={12} rx={4} className="bar-2">
-                <title>imitating successes: {(a[i] * 100).toFixed(1)}%</title>
+                <title>{`imitating successes: ${(a[i] * 100).toFixed(1)}%`}</title>
               </rect>
               <rect x={barX} y={y + 19} width={Math.max(1, b[i] * barW)} height={12} rx={4} className="bar-1">
-                <title>imitating better-than-average attempts: {(b[i] * 100).toFixed(1)}%</title>
+                <title>{`imitating better-than-average attempts: ${(b[i] * 100).toFixed(1)}%`}</title>
               </rect>
               <text x={720} y={y + 22} textAnchor="end" className="tick">
                 succeeds {Math.round(s.success * 100)}% of the time

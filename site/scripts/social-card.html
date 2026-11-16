@@ -1,0 +1,106 @@
+<!doctype html>
+<!--
+  The picture shown when a link to the site is shared (public/social-card.png).
+  To regenerate it, open this file in a 1200 x 630 window and take a screenshot,
+  for example with a Chromium browser:
+
+    chrome --headless --hide-scrollbars --window-size=1200,630 \
+      --screenshot=site/public/social-card.png site/scripts/social-card.html
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Social card</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; }
+      body {
+        width: 1200px;
+        height: 630px;
+        overflow: hidden;
+        background: #0d0d0d;
+        color: #f0efec;
+        font-family: system-ui, 'Segoe UI', sans-serif;
+        display: grid;
+        grid-template-columns: 1fr 440px;
+        gap: 56px;
+        padding: 72px 76px 72px 80px;
+        align-items: center;
+      }
+      .kicker { font-size: 21px; letter-spacing: 0.14em; text-transform: uppercase; color: #898781; font-weight: 600; }
+      h1 {
+        font-family: Charter, 'Sitka Text', Cambria, Georgia, serif;
+        font-size: 68px;
+        line-height: 1.04;
+        font-weight: 700;
+        letter-spacing: -0.015em;
+        margin: 22px 0 26px;
+      }
+      p { font-size: 27px; line-height: 1.38; color: #c3c2b7; max-width: 560px; }
+      .chips { display: flex; gap: 9px; margin-top: 30px; white-space: nowrap; }
+      .chip { font-size: 18px; padding: 6px 13px; border-radius: 999px; background: #16263b; color: #86b6ef; font-weight: 600; }
+      svg { display: block; }
+      .value { font: 600 19px ui-monospace, 'Cascadia Code', Consolas, monospace; fill: #f0efec; }
+      .caption { font-size: 19px; color: #898781; margin-top: 16px; text-align: center; }
+    </style>
+  </head>
+  <body>
+    <div>
+      <div class="kicker">Unofficial · CS 234 + CS 224R</div>
+      <h1>Reinforcement Learning Companion</h1>
+      <p>A visual 16-week course: figures, interactive playgrounds, quizzes and Python labs.</p>
+      <div class="chips">
+        <span class="chip">Q-learning</span><span class="chip">DQN</span>
+        <span class="chip">PPO</span><span class="chip">Offline RL</span><span class="chip">RL for LLMs</span>
+      </div>
+    </div>
+    <div>
+      <svg id="grid" width="440" height="440" viewBox="0 0 440 440" role="img" aria-label="A gridworld with each cell shaded by its value and an arrow pointing along the best move"></svg>
+      <div class="caption">Value iteration, Week 1</div>
+    </div>
+    <script>
+      // A 5 x 5 gridworld solved exactly: each cell's value is 0.9 to the power of
+      // its distance from the goal, and its arrow points along a shortest path.
+      const N = 5, SIZE = 82, GAP = 7.5, GAMMA = 0.9
+      const GOAL = [4, 0]
+      const WALLS = new Set(['1,1', '1,2', '3,3', '3,2'])
+      const key = (x, y) => `${x},${y}`
+      const dist = new Map([[key(...GOAL), 0]])
+      const queue = [GOAL]
+      const MOVES = [[1, 0], [0, -1], [-1, 0], [0, 1]]
+      while (queue.length) {
+        const [x, y] = queue.shift()
+        for (const [dx, dy] of MOVES) {
+          const nx = x + dx, ny = y + dy
+          if (nx < 0 || ny < 0 || nx >= N || ny >= N || WALLS.has(key(nx, ny)) || dist.has(key(nx, ny))) continue
+          dist.set(key(nx, ny), dist.get(key(x, y)) + 1)
+          queue.push([nx, ny])
+        }
+      }
+      let out = ''
+      for (let y = 0; y < N; y++) {
+        for (let x = 0; x < N; x++) {
+          const px = x * (SIZE + GAP), py = y * (SIZE + GAP)
+          const cx = px + SIZE / 2, cy = py + SIZE / 2
+          if (WALLS.has(key(x, y))) {
+            out += `<rect x="${px}" y="${py}" width="${SIZE}" height="${SIZE}" rx="9" fill="#1a1a19" stroke="#2c2c2a" stroke-width="1.5"/>`
+            continue
+          }
+          const d = dist.get(key(x, y))
+          if (d === 0) {
+            out += `<rect x="${px}" y="${py}" width="${SIZE}" height="${SIZE}" rx="9" fill="#199e70"/>`
+            out += `<text x="${cx}" y="${cy + 8}" text-anchor="middle" class="value" style="font-size:24px">+1</text>`
+            continue
+          }
+          const v = GAMMA ** d
+          out += `<rect x="${px}" y="${py}" width="${SIZE}" height="${SIZE}" rx="9" fill="#242423"/>`
+          out += `<rect x="${px}" y="${py}" width="${SIZE}" height="${SIZE}" rx="9" fill="#256abf" opacity="${(0.12 + 0.88 * (v - 0.4) / 0.6).toFixed(3)}"/>`
+          const [dx, dy] = MOVES.find(([mx, my]) => dist.get(key(x + mx, y + my)) === d - 1)
+          const angle = Math.atan2(dy, dx) * 180 / Math.PI
+          out += `<g transform="translate(${cx + dx * 4} ${cy - 15}) rotate(${angle})" stroke="#f0efec" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M-13 0H13M6 -7L13 0L6 7"/></g>`
+          out += `<text x="${cx}" y="${cy + 26}" text-anchor="middle" class="value">${v.toFixed(2)}</text>`
+        }
+      }
+      document.getElementById('grid').innerHTML = out
+    </script>
+  </body>
+</html>

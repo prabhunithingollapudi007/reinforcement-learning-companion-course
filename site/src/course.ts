@@ -44,6 +44,9 @@ const book = (label: string): Source => ({
 /** Where this project lives. The hosted copy points readers here for the labs. */
 export const REPO_URL = 'https://github.com/prabhunithingollapudi007/reinforcement-learning-companion-course'
 
+/** The public address of the hosted copy. Search engines are told each page's address from this. */
+export const SITE_URL = 'https://prabhunithingollapudi007.github.io/reinforcement-learning-companion-course/'
+
 export const COURSE_LINKS = [
   { label: 'CS 234 modules page (Winter 2026)', url: 'https://web.stanford.edu/class/cs234/modules.html' },
   { label: 'CS 224R course page (Spring 2026)', url: 'https://cs224r.stanford.edu/' },

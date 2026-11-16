@@ -109,9 +109,7 @@ export function TreeSearch() {
           const r = v > 0 ? 3 + 9 * Math.sqrt(v / sims) : 2
           return (
             <circle key={`n${p.join('')}`} cx={nodeX(p)} cy={LEVEL_Y[p.length]} r={p.length === 0 ? 9 : r} className={v > 0 ? 'dot dot-1' : 'tree-empty'}>
-              <title>
-                {pathName(p)}: {v > 0 ? `${v} visits, average result ${(node!.total / v).toFixed(2)}` : 'not built yet'}
-              </title>
+              <title>{`${pathName(p)}: ${v > 0 ? `${v} visits, average result ${(node!.total / v).toFixed(2)}` : 'not built yet'}`}</title>
             </circle>
           )
         })}
@@ -127,9 +125,7 @@ export function TreeSearch() {
           const value = leafValue(p)
           return (
             <rect key={`l${p.join('')}`} x={nodeX(p) - 3} y={292 - value * 38} width={6} height={value * 38} rx={2} className={value >= 0.8 ? 'bar-3' : 'tree-payoff'}>
-              <title>
-                {pathName(p)}: true payoff {value.toFixed(2)}
-              </title>
+              <title>{`${pathName(p)}: true payoff ${value.toFixed(2)}`}</title>
             </rect>
           )
         })}
@@ -258,7 +254,7 @@ export function ModelDrift() {
             <polyline points={series(real, panel.index, 0, panel.mid)} className="trace-real" />
             {short.map((segment, i) => (
               <circle key={`s${i}`} cx={tx(i * k)} cy={panel.mid - AMP * shown(segment[0], panel.index)} r={3} className="dot dot-1">
-                <title>a short rollout starts here, from the real state at step {i * k}</title>
+                <title>{`a short rollout starts here, from the real state at step ${i * k}`}</title>
               </circle>
             ))}
           </g>

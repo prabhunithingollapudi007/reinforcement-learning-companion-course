@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Playground } from '../../components/Playground'
+import { useLink, week } from '../../router'
 import '../shared.css'
 
 type Model = 'none' | 'simulator'
@@ -76,6 +77,7 @@ function Choice<T extends string>({ label, value, options, onChange }: { label: 
 
 /** Describe a problem; get the parts of the course that apply. */
 export function WhichTool() {
+  const link = useLink()
   const [model, setModel] = useState<Model>('none')
   const [demos, setDemos] = useState<Demos>('no')
   const [acting, setActing] = useState<Acting>('cheap')
@@ -134,7 +136,7 @@ export function WhichTool() {
             <div className="advice-why">{item.why}</div>
             <div className="advice-weeks">
               {item.weeks.map((w) => (
-                <a key={w} href={`#/week/${w}`} className="chip chip-accent">
+                <a key={w} href={link(week(w))} className="chip chip-accent">
                   Week {w}
                 </a>
               ))}
